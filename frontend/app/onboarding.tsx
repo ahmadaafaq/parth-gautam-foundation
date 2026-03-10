@@ -146,8 +146,17 @@ export default function OnboardingScreen() {
                   style={styles.input}
                   placeholder={t('fullName')}
                   value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  onChangeText={(text) => {
+                    setFormData(prev => ({ ...prev, name: text }));
+                  }}
                   placeholderTextColor="#9CA3AF"
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  textContentType="name"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  autoCorrect={false}
+                  spellCheck={false}
                 />
               </View>
 
@@ -157,8 +166,12 @@ export default function OnboardingScreen() {
                   style={styles.input}
                   placeholder={t('ageGroup')}
                   value={formData.age_group}
-                  onChangeText={(text) => setFormData({ ...formData, age_group: text })}
+                  onChangeText={(text) => {
+                    setFormData(prev => ({ ...prev, age_group: text }));
+                  }}
                   placeholderTextColor="#9CA3AF"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
                 />
               </View>
 
@@ -169,8 +182,12 @@ export default function OnboardingScreen() {
                   placeholder={t('wardNumber')}
                   keyboardType="number-pad"
                   value={formData.ward}
-                  onChangeText={(text) => setFormData({ ...formData, ward: text })}
+                  onChangeText={(text) => {
+                    setFormData(prev => ({ ...prev, ward: text }));
+                  }}
                   placeholderTextColor="#9CA3AF"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
                 />
               </View>
 
@@ -180,8 +197,11 @@ export default function OnboardingScreen() {
                   style={styles.input}
                   placeholder={t('occupation')}
                   value={formData.occupation}
-                  onChangeText={(text) => setFormData({ ...formData, occupation: text })}
+                  onChangeText={(text) => {
+                    setFormData(prev => ({ ...prev, occupation: text }));
+                  }}
                   placeholderTextColor="#9CA3AF"
+                  returnKeyType="done"
                 />
               </View>
 

@@ -1,6 +1,15 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { View } from 'react-native';
+import React from 'react';
+
+const HeaderRight = () => (
+  <View style={{ marginRight: 16 }}>
+    <LanguageSwitcher />
+  </View>
+);
 
 export default function TabLayout() {
   const { t } = useLanguageStore();
@@ -8,7 +17,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerRight: () => <HeaderRight />,
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
@@ -28,7 +38,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t('goodMorning').split(' ')[0], // 'Home' in both languages
+          headerShown: false,
+          title: t('home'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -37,7 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="city"
         options={{
-          title: t('cityMap').split(' ')[0], // 'City' in Hindi, 'City' in English
+          title: t('map'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map" size={size} color={color} />
           ),
@@ -46,7 +57,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai"
         options={{
-          title: 'AI',
+          title: t('aiAssistant'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
           ),
@@ -55,7 +66,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="programs"
         options={{
-          title: t('programs'), // Programs
+          headerShown: false,
+          title: t('programs'),
           tabBarIcon: ({ color, size}) => (
             <Ionicons name="grid" size={size} color={color} />
           ),
@@ -64,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="card"
         options={{
-          title: t('citizenCard').split(' ')[0], // 'Card' in both
+          title: t('card'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="card" size={size} color={color} />
           ),

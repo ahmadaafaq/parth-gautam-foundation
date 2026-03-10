@@ -10,6 +10,11 @@ export const translations = {
     education: 'शिक्षा',
     community: 'समुदाय',
 
+    // Tab Navigation
+    home: 'होम',
+    map: 'नक्शा',
+    card: 'कार्ड',
+
     // Onboarding
     enterMobile: 'अपना मोबाइल नंबर दर्ज करें',
     citizenCardNote: 'हम इसका उपयोग आपका नागरिक कार्ड बनाने के लिए करेंगे',
@@ -186,6 +191,11 @@ export const translations = {
     healthcare: 'Healthcare',
     education: 'Education',
     community: 'Community',
+
+    // Tab Navigation
+    home: 'Home',
+    map: 'Map',
+    card: 'Card',
 
     // Onboarding
     enterMobile: 'Enter Your Mobile Number',

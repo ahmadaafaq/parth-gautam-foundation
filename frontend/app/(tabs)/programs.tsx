@@ -13,10 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguageStore } from '../../store/languageStore';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function ProgramsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useLanguageStore();
   const [programs, setPrograms] = useState<any>({
     healthcare: [],
     education: [],
@@ -50,29 +53,29 @@ export default function ProgramsScreen() {
   const pillars = [
     {
       id: 'healthcare',
-      title: 'Healthcare',
+      title: t('healthcare'),
       icon: 'medical',
       color: '#EF4444',
       gradient: ['#EF4444', '#DC2626'],
-      description: 'Doctor appointments, Health camps, Teleconsultation',
+      description: t('healthcareServices'),
       route: '/healthcare',
     },
     {
       id: 'education',
-      title: 'Education',
+      title: t('education'),
       icon: 'school',
       color: '#F59E0B',
       gradient: ['#F59E0B', '#D97706'],
-      description: 'Scholarships, Skill training, Career guidance',
+      description: t('educationServices'),
       route: '/education',
     },
     {
       id: 'community',
-      title: 'Community Impact',
+      title: t('community'),
       icon: 'people',
       color: '#8B5CF6',
       gradient: ['#8B5CF6', '#7C3AED'],
-      description: 'Volunteer programs, Report issues, Community events',
+      description: t('communityImpact'),
       route: '/community',
     },
   ];
@@ -80,8 +83,11 @@ export default function ProgramsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Programs Hub</Text>
-        <Text style={styles.headerSubtitle}>Explore opportunities in your ward</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{t('programsHub')}</Text>
+          <Text style={styles.headerSubtitle}>{t('exploreOpportunities')}</Text>
+        </View>
+        <LanguageSwitcher />
       </View>
 
       <ScrollView
@@ -110,12 +116,12 @@ export default function ProgramsScreen() {
                     <Text style={styles.statNumber}>
                       {programs[pillar.id]?.length || 0}
                     </Text>
-                    <Text style={styles.statLabel}>Programs</Text>
+                    <Text style={styles.statLabel}>{t('programs')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.exploreButton}>
-                  <Text style={styles.exploreButtonText}>Explore {pillar.title}</Text>
+                  <Text style={styles.exploreButtonText}>{t('explore')} {pillar.title}</Text>
                   <Ionicons name="arrow-forward" size={20} color="#fff" />
                 </View>
               </LinearGradient>
@@ -125,7 +131,7 @@ export default function ProgramsScreen() {
 
         {/* Recent Programs */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Programs</Text>
+          <Text style={styles.sectionTitle}>{t('recentPrograms')}</Text>
           {Object.values(programs)
             .flat()
             .slice(0, 5)
@@ -192,10 +198,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  headerContent: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,

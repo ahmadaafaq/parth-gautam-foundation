@@ -10,23 +10,26 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguageStore } from '../../store/languageStore';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suggestionsAPI, updatesAPI } from '../../utils/api';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { t } = useLanguageStore();
   const [suggestions, setSuggestions] = useState([]);
   const [updates, setUpdates] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return t('goodMorning');
+    if (hour < 17) return t('goodAfternoon');
+    return t('goodEvening');
   };
 
   const loadData = async () => {
@@ -57,28 +60,28 @@ export default function HomeScreen() {
   const quickActions = [
     {
       id: 'doctor',
-      title: 'Book Doctor',
+      title: t('bookDoctor'),
       icon: 'medical',
       color: '#EF4444',
       onPress: () => router.push('/healthcare'),
     },
     {
       id: 'scholarship',
-      title: 'Apply Scholarship',
+      title: t('applyScholarship'),
       icon: 'school',
       color: '#F59E0B',
       onPress: () => router.push('/education'),
     },
     {
       id: 'issue',
-      title: 'Report Issue',
+      title: t('reportIssue'),
       icon: 'alert-circle',
       color: '#8B5CF6',
       onPress: () => router.push('/community'),
     },
     {
       id: 'course',
-      title: 'Join Skill Course',
+      title: t('joinSkillCourse'),
       icon: 'book',
       color: '#10B981',
       onPress: () => router.push('/education'),
@@ -99,18 +102,21 @@ export default function HomeScreen() {
         {/* Header */}
         <LinearGradient colors={['#3B82F6', '#2563EB']} style={styles.header}>
           <View style={styles.greetingRow}>
-            <View>
+            <View style={styles.greetingContent}>
               <Text style={styles.greeting}>{getGreeting()}</Text>
               <Text style={styles.userName}>{user.name}</Text>
             </View>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications-outline" size={24} color="#fff" />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <LanguageSwitcher />
+              <TouchableOpacity style={styles.notificationButton}>
+                <Ionicons name="notifications-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
           
           <View style={styles.statusBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-            <Text style={styles.statusText}>Citizen Member • Ward {user.ward}</Text>
+            <Text style={styles.statusText}>{t('citizenMember')} • {t('ward')} {user.ward}</Text>
           </View>
         </LinearGradient>
 
@@ -118,17 +124,17 @@ export default function HomeScreen() {
         <View style={styles.cardWidget}>
           <View style={styles.cardWidgetContent}>
             <View>
-              <Text style={styles.cardWidgetLabel}>Citizen ID</Text>
+              <Text style={styles.cardWidgetLabel}>{t('citizenId')}</Text>
               <Text style={styles.cardWidgetId}>{user.citizen_id}</Text>
               <Text style={styles.cardWidgetMember}>
-                Member Since {new Date().getFullYear()}
+                {t('memberSince')} {new Date().getFullYear()}
               </Text>
             </View>
             <TouchableOpacity
               style={styles.viewCardButton}
               onPress={() => router.push('/(tabs)/card')}
             >
-              <Text style={styles.viewCardButtonText}>View Card</Text>
+              <Text style={styles.viewCardButtonText}>{t('viewCard')}</Text>
               <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
             </TouchableOpacity>
           </View>
@@ -136,7 +142,7 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('quickActions')}</Text>
           <View style={styles.quickActionsGrid}>
             {quickActions.map((action) => (
               <TouchableOpacity
@@ -156,7 +162,7 @@ export default function HomeScreen() {
         {/* AI Suggestions */}
         {suggestions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recommended for You</Text>
+            <Text style={styles.sectionTitle}>{t('recommendedForYou')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {suggestions.map((program: any) => (
                 <TouchableOpacity key={program.id} style={styles.suggestionCard}>
@@ -183,7 +189,7 @@ export default function HomeScreen() {
                     <Text style={styles.suggestionDate}>{program.date}</Text>
                   )}
                   <TouchableOpacity style={styles.registerButton}>
-                    <Text style={styles.registerButtonText}>Register Now</Text>
+                    <Text style={styles.registerButtonText}>{t('registerNow')}</Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))}
@@ -193,7 +199,7 @@ export default function HomeScreen() {
 
         {/* Community Updates */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Community Updates</Text>
+          <Text style={styles.sectionTitle}>{t('communityUpdates')}</Text>
           {updates.length > 0 ? (
             updates.map((update: any) => (
               <View key={update.id} style={styles.updateCard}>
@@ -211,7 +217,7 @@ export default function HomeScreen() {
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No recent updates</Text>
+            <Text style={styles.emptyText}>{t('noRecentUpdates')}</Text>
           )}
         </View>
 
@@ -240,6 +246,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  greetingContent: {
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   greeting: {
     fontSize: 16,
