@@ -11,24 +11,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguageStore } from '../../store/languageStore';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function CitizenCardScreen() {
   const { user, logout } = useAuthStore();
+  const { t } = useLanguageStore();
   const router = useRouter();
 
   if (!user) return null;
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('logout'), 'Are you sure you want to logout?', [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Logout',
+        text: t('logout'),
         style: 'destructive',
-        onPress: async () => {
-          await logout();
-          router.replace('/');
+        onPress: () => {
+          logout();
+          setTimeout(() => {
+            router.replace('/');
+          }, 100);
         },
       },
     ]);
@@ -37,7 +42,10 @@ export default function CitizenCardScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Citizen Card</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>{t('citizenCard')}</Text>
+          <LanguageSwitcher />
+        </View>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#EF4444" />
         </TouchableOpacity>
@@ -62,12 +70,12 @@ export default function CitizenCardScreen() {
             <View style={styles.cardBody}>
               <Text style={styles.userName}>{user.name}</Text>
               <Text style={styles.citizenId}>ID: {user.citizen_id}</Text>
-              <Text style={styles.wardInfo}>Ward {user.ward}</Text>
+              <Text style={styles.wardInfo}>{t('ward')} {user.ward}</Text>
             </View>
 
             <View style={styles.cardFooter}>
               <View>
-                <Text style={styles.footerLabel}>Member Since</Text>
+                <Text style={styles.footerLabel}>{t('memberSince')}</Text>
                 <Text style={styles.footerValue}>{new Date().getFullYear()}</Text>
               </View>
               <View style={styles.qrContainer}>
@@ -79,30 +87,30 @@ export default function CitizenCardScreen() {
 
         {/* Benefits */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Benefits</Text>
+          <Text style={styles.sectionTitle}>{t('yourBenefits')}</Text>
           {[
             {
               icon: 'medical',
-              title: 'Priority Health Registration',
-              description: 'Skip queues at health camps',
+              title: t('priorityHealthRegistration'),
+              description: t('skipQueues'),
               color: '#EF4444',
             },
             {
               icon: 'school',
-              title: 'Scholarship Eligibility',
-              description: 'Access to education programs',
+              title: t('scholarshipEligibility'),
+              description: t('accessEducation'),
               color: '#F59E0B',
             },
             {
               icon: 'book',
-              title: 'Skill Course Access',
-              description: 'Free training programs',
+              title: t('skillCourseAccess'),
+              description: t('freeTraining'),
               color: '#10B981',
             },
             {
               icon: 'ribbon',
-              title: 'Volunteer Recognition',
-              description: 'Earn points and rewards',
+              title: t('volunteerRecognition'),
+              description: t('earnPointsRewards'),
               color: '#8B5CF6',
             },
           ].map((benefit, index) => (
@@ -121,7 +129,7 @@ export default function CitizenCardScreen() {
 
         {/* Impact Score */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Citizen Impact Score</Text>
+          <Text style={styles.sectionTitle}>{t('citizenImpactScore')}</Text>
           <LinearGradient
             colors={['#F59E0B', '#D97706']}
             style={styles.impactCard}
@@ -129,41 +137,41 @@ export default function CitizenCardScreen() {
             <View style={styles.impactHeader}>
               <Ionicons name="trophy" size={48} color="#fff" />
               <View>
-                <Text style={styles.impactLabel}>Your Impact</Text>
-                <Text style={styles.impactScore}>{user.volunteer_points} Points</Text>
+                <Text style={styles.impactLabel}>{t('yourImpact')}</Text>
+                <Text style={styles.impactScore}>{user.volunteer_points} {t('points')}</Text>
               </View>
             </View>
 
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{user.programs_attended}</Text>
-                <Text style={styles.statLabel}>Programs Attended</Text>
+                <Text style={styles.statLabel}>{t('programsAttended')}</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{user.volunteer_points}</Text>
-                <Text style={styles.statLabel}>Volunteer Points</Text>
+                <Text style={styles.statLabel}>{t('volunteerPoints')}</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{user.community_reports}</Text>
-                <Text style={styles.statLabel}>Issues Reported</Text>
+                <Text style={styles.statLabel}>{t('issuesReported')}</Text>
               </View>
             </View>
 
             <TouchableOpacity style={styles.leaderboardButton}>
               <Ionicons name="podium" size={20} color="#F59E0B" />
-              <Text style={styles.leaderboardText}>View Leaderboard</Text>
+              <Text style={styles.leaderboardText}>{t('viewLeaderboard')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
 
         {/* Activity History */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <Text style={styles.sectionTitle}>{t('recentActivity')}</Text>
           <View style={styles.emptyState}>
             <Ionicons name="time-outline" size={48} color="#9CA3AF" />
-            <Text style={styles.emptyText}>No recent activity</Text>
+            <Text style={styles.emptyText}>{t('noRecentActivity')}</Text>
             <Text style={styles.emptySubtext}>
-              Start participating in programs to see your history
+              {t('startParticipating')}
             </Text>
           </View>
         </View>
@@ -187,6 +195,11 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   headerTitle: {
     fontSize: 24,
