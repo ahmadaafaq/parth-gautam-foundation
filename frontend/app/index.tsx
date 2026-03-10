@@ -1,30 +1,147 @@
-import { Text, View, StyleSheet, Image } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../store/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+export default function WelcomeScreen() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
 
-export default function Index() {
-  console.log(EXPO_PUBLIC_BACKEND_URL, "EXPO_PUBLIC_BACKEND_URL");
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../assets/images/app-image.png")}
-        style={styles.image}
-      />
-    </View>
+    <LinearGradient
+      colors={['#0EA5E9', '#3B82F6', '#6366F1']}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Ionicons name="people-circle" size={120} color="#fff" />
+        </View>
+        
+        <Text style={styles.title}>Welcome to</Text>
+        <Text style={styles.subtitle}>Parth Gautam Foundation</Text>
+        <Text style={styles.description}>
+          Connecting citizens with healthcare, education and opportunities
+        </Text>
+
+        <View style={styles.pillarsContainer}>
+          <View style={styles.pillar}>
+            <Ionicons name="medical" size={24} color="#fff" />
+            <Text style={styles.pillarText}>Healthcare</Text>
+          </View>
+          <View style={styles.pillar}>
+            <Ionicons name="school" size={24} color="#fff" />
+            <Text style={styles.pillarText}>Education</Text>
+          </View>
+          <View style={styles.pillar}>
+            <Ionicons name="people" size={24} color="#fff" />
+            <Text style={styles.pillarText}>Community</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/onboarding')}
+        >
+          <Ionicons name="phone-portrait" size={24} color="#3B82F6" />
+          <Text style={styles.buttonText}>Continue with Mobile Number</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.whatsappButton]}
+          onPress={() => router.push('/onboarding')}
+        >
+          <Ionicons name="logo-whatsapp" size={24} color="#fff" />
+          <Text style={[styles.buttonText, styles.whatsappButtonText]}>
+            Continue with WhatsApp
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0c0c0c",
-    alignItems: "center",
-    justifyContent: "center",
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  iconContainer: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    color: '#E0F2FE',
+    textAlign: 'center',
+    marginBottom: 40,
+    lineHeight: 24,
+  },
+  pillarsContainer: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 48,
+  },
+  pillar: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  pillarText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 16,
+    width: '100%',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3B82F6',
+    flex: 1,
+    textAlign: 'center',
+  },
+  whatsappButton: {
+    backgroundColor: '#25D366',
+  },
+  whatsappButtonText: {
+    color: '#fff',
   },
 });
