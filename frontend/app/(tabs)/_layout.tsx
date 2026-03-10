@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguageStore } from '../../store/languageStore';
 
 export default function TabLayout() {
+  const { t } = useLanguageStore();
+
   return (
     <Tabs
       screenOptions={{
@@ -25,7 +28,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('goodMorning').split(' ')[0], // 'Home' in both languages
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -34,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="city"
         options={{
-          title: 'City',
+          title: t('cityMap').split(' ')[0], // 'City' in Hindi, 'City' in English
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map" size={size} color={color} />
           ),
@@ -52,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="programs"
         options={{
-          title: 'Programs',
+          title: t('programs'), // Programs
           tabBarIcon: ({ color, size}) => (
             <Ionicons name="grid" size={size} color={color} />
           ),
@@ -61,7 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="card"
         options={{
-          title: 'Card',
+          title: t('citizenCard').split(' ')[0], // 'Card' in both
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="card" size={size} color={color} />
           ),

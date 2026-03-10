@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
+import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const { t } = useLanguageStore();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -20,29 +23,31 @@ export default function WelcomeScreen() {
       colors={['#0EA5E9', '#3B82F6', '#6366F1']}
       style={styles.container}
     >
+      <View style={styles.languageSwitcherContainer}>
+        <LanguageSwitcher />
+      </View>
+
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons name="people-circle" size={120} color="#fff" />
         </View>
         
-        <Text style={styles.title}>Welcome to</Text>
-        <Text style={styles.subtitle}>Parth Gautam Foundation</Text>
-        <Text style={styles.description}>
-          Connecting citizens with healthcare, education and opportunities
-        </Text>
+        <Text style={styles.title}>{t('welcomeTitle')}</Text>
+        <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
+        <Text style={styles.description}>{t('welcomeDescription')}</Text>
 
         <View style={styles.pillarsContainer}>
           <View style={styles.pillar}>
             <Ionicons name="medical" size={24} color="#fff" />
-            <Text style={styles.pillarText}>Healthcare</Text>
+            <Text style={styles.pillarText}>{t('healthcare')}</Text>
           </View>
           <View style={styles.pillar}>
             <Ionicons name="school" size={24} color="#fff" />
-            <Text style={styles.pillarText}>Education</Text>
+            <Text style={styles.pillarText}>{t('education')}</Text>
           </View>
           <View style={styles.pillar}>
             <Ionicons name="people" size={24} color="#fff" />
-            <Text style={styles.pillarText}>Community</Text>
+            <Text style={styles.pillarText}>{t('community')}</Text>
           </View>
         </View>
 
@@ -51,7 +56,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/onboarding')}
         >
           <Ionicons name="phone-portrait" size={24} color="#3B82F6" />
-          <Text style={styles.buttonText}>Continue with Mobile Number</Text>
+          <Text style={styles.buttonText}>{t('continueWithMobile')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -60,7 +65,7 @@ export default function WelcomeScreen() {
         >
           <Ionicons name="logo-whatsapp" size={24} color="#fff" />
           <Text style={[styles.buttonText, styles.whatsappButtonText]}>
-            Continue with WhatsApp
+            {t('continueWithWhatsApp')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -71,6 +76,12 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  languageSwitcherContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
   },
   content: {
     flex: 1,

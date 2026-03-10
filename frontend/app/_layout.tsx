@@ -1,12 +1,15 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function RootLayout() {
   const loadUser = useAuthStore((state) => state.loadUser);
+  const loadLanguage = useLanguageStore((state) => state.loadLanguage);
 
   useEffect(() => {
     loadUser();
+    loadLanguage();
   }, []);
 
   return (
