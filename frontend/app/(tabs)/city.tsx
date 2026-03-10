@@ -7,13 +7,23 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { programsAPI } from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
-import * as Location from 'expo-location';
+
+// Only import native modules on mobile
+let MapView: any = null;
+let Marker: any = null;
+let Location: any = null;
+
+if (Platform.OS !== 'web') {
+  MapView = require('react-native-maps').default;
+  Marker = require('react-native-maps').Marker;
+  Location = require('expo-location');
+}
 
 export default function CityMapScreen() {
   const { user } = useAuthStore();
@@ -34,6 +44,8 @@ export default function CityMapScreen() {
   }, [filter]);
 
   const requestLocationPermission = async () => {
+    if (Platform.OS === 'web' || !Location) return;
+    
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
@@ -119,19 +131,53 @@ export default function CityMapScreen() {
         ))}
       </ScrollView>
 
-      <MapView style={styles.map} region={region} onRegionChangeComplete={setRegion}>
-        {programs.map((program: any) => (
-          <Marker
-            key={program.id}
-            coordinate={{
-              latitude: program.latitude || 28.6139,
-              longitude: program.longitude || 77.209,
-            }}
-            pinColor={getMarkerColor(program.category)}
-            onPress={() => setSelectedProgram(program)}
-          />
-        ))}
-      </MapView>
+      {Platform.OS === 'web' ? (
+        <View style={styles.webMapPlaceholder}>
+          <Ionicons name="map" size={64} color="#9CA3AF" />
+          <Text style={styles.webMapText}>Map View</Text>
+          <Text style={styles.webMapSubtext}>
+            Please use Expo Go on mobile to see the interactive map
+          </Text>
+          <ScrollView style={styles.programsList}>
+            {programs.map((program: any) => (
+              <TouchableOpacity
+                key={program.id}
+                style={styles.programListItem}
+                onPress={() => setSelectedProgram(program)}
+              >
+                <View
+                  style={[
+                    styles.programListIcon,
+                    { backgroundColor: getMarkerColor(program.category) },
+                  ]}
+                />
+                <View style={styles.programListContent}>
+                  <Text style={styles.programListTitle}>{program.title}</Text>
+                  <Text style={styles.programListLocation}>{program.location}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : MapView ? (
+        <MapView style={styles.map} region={region} onRegionChangeComplete={setRegion}>
+          {programs.map((program: any) => (
+            <Marker
+              key={program.id}
+              coordinate={{
+                latitude: program.latitude || 28.6139,
+                longitude: program.longitude || 77.209,
+              }}
+              pinColor={getMarkerColor(program.category)}
+              onPress={() => setSelectedProgram(program)}
+            />
+          ))}
+        </MapView>
+      ) : (
+        <View style={styles.webMapPlaceholder}>
+          <Text style={styles.webMapText}>Loading map...</Text>
+        </View>
+      )}
 
       {selectedProgram && (
         <View style={styles.bottomSheet}>
@@ -267,6 +313,62 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  webMapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    padding: 24,
+  },
+  webMapText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  webMapSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  programsList: {
+    width: '100%',
+    maxWidth: 600,
+  },
+  programListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  programListIcon: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  programListContent: {
+    flex: 1,
+  },
+  programListTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  programListLocation: {
+    fontSize: 12,
+    color: '#6B7280',
   },
   bottomSheet: {
     position: 'absolute',
