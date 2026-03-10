@@ -96,8 +96,13 @@ export default function OnboardingScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.header}>
             {step === 2 && (
               <TouchableOpacity
@@ -115,7 +120,9 @@ export default function OnboardingScreen() {
 
           {step === 1 ? (
             <View style={styles.content}>
-              <Ionicons name="phone-portrait" size={64} color="#3B82F6" />
+              <View style={styles.iconContainer}>
+                <Ionicons name="phone-portrait" size={64} color="#3B82F6" />
+              </View>
               <Text style={styles.title}>{t('enterMobile')}</Text>
               <Text style={styles.subtitle}>
                 {t('citizenCardNote')}
@@ -136,7 +143,9 @@ export default function OnboardingScreen() {
             </View>
           ) : (
             <View style={styles.content}>
-              <Ionicons name="person-circle" size={64} color="#3B82F6" />
+              <View style={styles.iconContainer}>
+                <Ionicons name="person-circle" size={64} color="#3B82F6" />
+              </View>
               <Text style={styles.title}>{t('completeProfile')}</Text>
               <Text style={styles.subtitle}>{t('personalizeExperience')}</Text>
 
@@ -151,8 +160,8 @@ export default function OnboardingScreen() {
                   }}
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="words"
-                  autoComplete="name"
-                  textContentType="name"
+                  autoComplete="off"
+                  textContentType="none"
                   returnKeyType="next"
                   blurOnSubmit={false}
                   autoCorrect={false}
@@ -282,7 +291,11 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
+    alignItems: 'stretch',
+  },
+  iconContainer: {
     alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     fontSize: 24,
