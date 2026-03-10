@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
+import { useLanguageStore } from '../store/languageStore';
 import { authAPI, seedAPI } from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function OnboardingScreen() {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
+  const { t } = useLanguageStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -32,11 +34,11 @@ export default function OnboardingScreen() {
   });
 
   const interestOptions = [
-    { id: 'healthcare', label: 'Healthcare', icon: 'medical' },
-    { id: 'education', label: 'Education', icon: 'school' },
-    { id: 'jobs', label: 'Jobs', icon: 'briefcase' },
-    { id: 'volunteer', label: 'Volunteer Work', icon: 'hand-right' },
-    { id: 'community', label: 'Community Issues', icon: 'people' },
+    { id: 'healthcare', label: t('healthcare'), icon: 'medical' },
+    { id: 'education', label: t('education'), icon: 'school' },
+    { id: 'jobs', label: t('jobs'), icon: 'briefcase' },
+    { id: 'volunteer', label: t('volunteer'), icon: 'hand-right' },
+    { id: 'community', label: t('communityIssues'), icon: 'people' },
   ];
 
   const toggleInterest = (interest: string) => {
@@ -51,13 +53,13 @@ export default function OnboardingScreen() {
   const handleContinue = async () => {
     if (step === 1) {
       if (!formData.phone || formData.phone.length < 10) {
-        Alert.alert('Error', 'Please enter a valid mobile number');
+        Alert.alert(t('error'), 'Please enter a valid mobile number');
         return;
       }
       setStep(2);
     } else {
       if (!formData.name || !formData.ward || formData.interests.length === 0) {
-        Alert.alert('Error', 'Please fill all required fields');
+        Alert.alert(t('error'), 'Please fill all required fields');
         return;
       }
 
@@ -78,10 +80,10 @@ export default function OnboardingScreen() {
             setUser(user);
             router.replace('/(tabs)');
           } catch (loginError) {
-            Alert.alert('Error', 'Failed to login');
+            Alert.alert(t('error'), 'Failed to login');
           }
         } else {
-          Alert.alert('Error', 'Registration failed. Please try again.');
+          Alert.alert(t('error'), 'Registration failed. Please try again.');
         }
       } finally {
         setLoading(false);
@@ -114,56 +116,76 @@ export default function OnboardingScreen() {
           {step === 1 ? (
             <View style={styles.content}>
               <Ionicons name="phone-portrait" size={64} color="#3B82F6" />
-              <Text style={styles.title}>Enter Your Mobile Number</Text>
+              <Text style={styles.title}>{t('enterMobile')}</Text>
               <Text style={styles.subtitle}>
-                We'll use this to create your Citizen Card
+                {t('citizenCardNote')}
               </Text>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Mobile Number"
-                keyboardType="phone-pad"
-                value={formData.phone}
-                onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                maxLength={10}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>{t('mobileNumber')} *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('mobileNumber')}
+                  keyboardType="phone-pad"
+                  value={formData.phone}
+                  onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                  maxLength={10}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
             </View>
           ) : (
             <View style={styles.content}>
               <Ionicons name="person-circle" size={64} color="#3B82F6" />
-              <Text style={styles.title}>Complete Your Profile</Text>
-              <Text style={styles.subtitle}>Help us personalize your experience</Text>
+              <Text style={styles.title}>{t('completeProfile')}</Text>
+              <Text style={styles.subtitle}>{t('personalizeExperience')}</Text>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name *"
-                value={formData.name}
-                onChangeText={(text) => setFormData({ ...formData, name: text })}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>{t('fullName')} *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('fullName')}
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Age Group (e.g., 18-25)"
-                value={formData.age_group}
-                onChangeText={(text) => setFormData({ ...formData, age_group: text })}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>{t('ageGroup')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('ageGroup')}
+                  value={formData.age_group}
+                  onChangeText={(text) => setFormData({ ...formData, age_group: text })}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Ward Number *"
-                keyboardType="number-pad"
-                value={formData.ward}
-                onChangeText={(text) => setFormData({ ...formData, ward: text })}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>{t('wardNumber')} *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('wardNumber')}
+                  keyboardType="number-pad"
+                  value={formData.ward}
+                  onChangeText={(text) => setFormData({ ...formData, ward: text })}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Occupation"
-                value={formData.occupation}
-                onChangeText={(text) => setFormData({ ...formData, occupation: text })}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>{t('occupation')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('occupation')}
+                  value={formData.occupation}
+                  onChangeText={(text) => setFormData({ ...formData, occupation: text })}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
 
-              <Text style={styles.label}>Select Your Interests *</Text>
+              <Text style={styles.label}>{t('selectInterests')} *</Text>
               <View style={styles.interestsContainer}>
                 {interestOptions.map((option) => (
                   <TouchableOpacity
@@ -199,7 +221,7 @@ export default function OnboardingScreen() {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Please wait...' : step === 1 ? 'Continue' : 'Get Started'}
+              {loading ? t('pleaseWait') : step === 1 ? t('continue') : t('getStarted')}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -256,6 +278,17 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textAlign: 'center',
   },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
   input: {
     width: '100%',
     backgroundColor: '#F9FAFB',
@@ -265,7 +298,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     fontSize: 16,
-    marginBottom: 16,
+    color: '#1F2937',
   },
   label: {
     fontSize: 16,
