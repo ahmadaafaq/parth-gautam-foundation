@@ -14,16 +14,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { programsAPI } from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
 
-// Only import native modules on mobile
+// Only import native maps on mobile, with a safety try/catch for Expo Go
+// (Expo Go does not bundle the react-native-maps native binary)
 let MapView: any = null;
 let Marker: any = null;
 let Location: any = null;
 
 if (Platform.OS !== 'web') {
-  MapView = require('react-native-maps').default;
-  Marker = require('react-native-maps').Marker;
-  Location = require('expo-location');
+  try {
+    MapView = require('react-native-maps').default;
+    Marker = require('react-native-maps').Marker;
+  } catch {
+    // Running in Expo Go – native maps not available; list view will be shown
+    MapView = null;
+    Marker = null;
+  }
+  try {
+    Location = require('expo-location');
+  } catch {
+    Location = null;
+  }
 }
+
 
 export default function CityMapScreen() {
   const { user } = useAuthStore();
