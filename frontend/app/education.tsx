@@ -9,15 +9,27 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../utils/api';
 
 export default function EducationScreen() {
   const router = useRouter();
+  const { type } = useLocalSearchParams<{ type?: string }>();
   const [programs, setPrograms] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Determine context: scholarship, skills, or general
+  const isScholarship = type === 'scholarship';
+  const isSkills = type === 'skills';
+  const headerIcon = isScholarship ? 'school' : isSkills ? 'construct' : 'school';
+  const headerTitle = isScholarship ? 'Scholarships' : isSkills ? 'Skill Training' : 'Education & Skills';
+  const headerSubtitle = isScholarship
+    ? 'Apply for financial aid programs'
+    : isSkills
+      ? 'Enhance your career skills'
+      : 'Learn, grow, and succeed';
 
   const loadPrograms = async () => {
     try {
@@ -76,9 +88,9 @@ export default function EducationScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Ionicons name="school" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>AI Education & Skills</Text>
-          <Text style={styles.headerSubtitle}>Learn, grow, and succeed</Text>
+          <Ionicons name={headerIcon as any} size={48} color="#fff" />
+          <Text style={styles.headerTitle}>{headerTitle}</Text>
+          <Text style={styles.headerSubtitle}>{headerSubtitle}</Text>
         </View>
       </LinearGradient>
 
@@ -130,8 +142,8 @@ export default function EducationScreen() {
                         program.subcategory === 'scholarship'
                           ? 'school'
                           : program.subcategory === 'skill_training'
-                          ? 'construct'
-                          : 'briefcase'
+                            ? 'construct'
+                            : 'briefcase'
                       }
                       size={24}
                       color="#F59E0B"

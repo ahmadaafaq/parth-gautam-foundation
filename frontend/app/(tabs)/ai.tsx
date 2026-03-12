@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,68 +7,142 @@ import {
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Linking,
   Alert,
+  Dimensions,
+  Animated,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { chatAPI } from '../../utils/api';
 import * as Speech from 'expo-speech';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// ─── Dot animation component ──────────────────────────────────────────────────
+const TypingDot = ({ delay }: { delay: number }) => {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(anim, { toValue: -6, duration: 300, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.delay(600 - delay),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View style={[styles.loadingDot, { transform: [{ translateY: anim }] }]} />
+  );
+};
+
+// ─── Pulse animation for mic button ───────────────────────────────────────────
+const PulseRing = ({ active }: { active: boolean }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (active) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(scale, { toValue: 1.6, duration: 800, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 800, useNativeDriver: true }),
+          ]),
+          Animated.parallel([
+            Animated.timing(scale, { toValue: 1, duration: 0, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0.4, duration: 0, useNativeDriver: true }),
+          ]),
+        ])
+      );
+      opacity.setValue(0.4);
+      loop.start();
+      return () => loop.stop();
+    } else {
+      scale.setValue(1);
+      opacity.setValue(0);
+    }
+  }, [active]);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.pulseRing,
+        { transform: [{ scale }], opacity },
+      ]}
+    />
+  );
+};
+
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function AIAssistantScreen() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('chat'); // chat, voice, whatsapp
+  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<'chat' | 'voice' | 'whatsapp'>('chat');
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const sessionId = useRef(`session-${Date.now()}`);
+  const inputRef = useRef<TextInput>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
         {
           role: 'assistant',
-          content: `Hello ${user?.name || 'there'}! I'm your AI Community Assistant. I can help you with:\n\n• Healthcare services\n• Education opportunities\n• Community programs\n• Citizen card benefits\n\nHow can I assist you today?`,
+          content: `Hello ${user?.name || 'there'}! 👋\n\nI'm your AI Community Assistant. I can help you with:\n\n• Healthcare services\n• Education opportunities\n• Community programs\n• Citizen card benefits\n\nHow can I assist you today?`,
           timestamp: new Date(),
         },
       ]);
     }
   }, []);
 
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+  }, []);
+
   const sendMessage = async () => {
-    if (!inputText.trim() || !user) return;
+    if (!inputText.trim() || !user || loading) return;
 
-    const userMessage = {
-      role: 'user',
-      content: inputText,
-      timestamp: new Date(),
-    };
-
+    const userMessage = { role: 'user', content: inputText.trim(), timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
+    scrollToBottom();
 
     try {
-      const response = await chatAPI.sendMessage(user.id, inputText, sessionId.current);
-      
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    } catch (error) {
+      const response = await chatAPI.sendMessage(user.id, userMessage.content, sessionId.current);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: response.response, timestamp: new Date() },
+      ]);
+      scrollToBottom();
+    } catch {
       Alert.alert('Error', 'Failed to send message. Please try again.');
-      console.error('Chat error:', error);
     } finally {
       setLoading(false);
     }
@@ -76,445 +150,735 @@ export default function AIAssistantScreen() {
 
   const startVoiceInput = () => {
     setIsListening(true);
-    Speech.speak('Listening... What would you like to know?', {
+    Speech.speak('Listening. What would you like to know?', {
       language: 'en',
       onDone: () => {
         setTimeout(() => {
           setIsListening(false);
-          Alert.alert(
-            'Voice Input',
-            'Voice input is available! For this demo, please type your question instead.',
-            [{ text: 'OK', onPress: () => setActiveTab('chat') }]
-          );
-        }, 2000);
+          Alert.alert('Voice Input', 'For this demo, please type your question in the chat tab.', [
+            { text: 'Go to Chat', onPress: () => setActiveTab('chat') },
+          ]);
+        }, 1800);
       },
     });
   };
 
   const openWhatsApp = () => {
-    const phoneNumber = '1234567890'; // Replace with actual WhatsApp Business number
+    const phoneNumber = '1234567890';
     const message = encodeURIComponent(
       `Hi! I'm ${user?.name} (Citizen ID: ${user?.citizen_id}). I need assistance with community services.`
     );
-    const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
-    
-    Linking.canOpenURL(whatsappUrl)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(whatsappUrl);
-        } else {
-          Alert.alert('WhatsApp Not Installed', 'Please install WhatsApp to continue.');
-        }
-      })
+    const url = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
+    Linking.canOpenURL(url)
+      .then((ok) => (ok ? Linking.openURL(url) : Alert.alert('WhatsApp Not Installed', 'Please install WhatsApp to continue.')))
       .catch(() => Alert.alert('Error', 'Could not open WhatsApp'));
   };
 
+  // ── Tab bar ──────────────────────────────────────────────────────────────────
+  const TABS = [
+    { key: 'chat', label: 'Chat', icon: 'chatbubble-ellipses', activeColor: '#4F6EF7' },
+    { key: 'voice', label: 'Voice', icon: 'mic', activeColor: '#4F6EF7' },
+    { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', activeColor: '#25D366' },
+  ] as const;
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FAFBFF" />
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AI Community Assistant</Text>
-        <Text style={styles.headerSubtitle}>Powered by GPT-4</Text>
+        <View style={styles.headerBadge}>
+          <View style={styles.statusDot} />
+          <Text style={styles.badgeText}>Online</Text>
+        </View>
+        <Text style={styles.headerTitle}>AI Assistant</Text>
+        <Text style={styles.headerSubtitle}>Community Services · Powered by GPT-4</Text>
       </View>
 
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'chat' && styles.tabActive]}
-          onPress={() => setActiveTab('chat')}
-        >
-          <Ionicons
-            name="chatbubble"
-            size={20}
-            color={activeTab === 'chat' ? '#3B82F6' : '#9CA3AF'}
-          />
-          <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>
-            Chat
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'voice' && styles.tabActive]}
-          onPress={() => setActiveTab('voice')}
-        >
-          <Ionicons
-            name="mic"
-            size={20}
-            color={activeTab === 'voice' ? '#3B82F6' : '#9CA3AF'}
-          />
-          <Text style={[styles.tabText, activeTab === 'voice' && styles.tabTextActive]}>
-            Voice
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'whatsapp' && styles.tabActive]}
-          onPress={() => setActiveTab('whatsapp')}
-        >
-          <Ionicons
-            name="logo-whatsapp"
-            size={20}
-            color={activeTab === 'whatsapp' ? '#25D366' : '#9CA3AF'}
-          />
-          <Text style={[styles.tabText, activeTab === 'whatsapp' && styles.tabTextActive]}>
-            WhatsApp
-          </Text>
-        </TouchableOpacity>
+      {/* ── Tabs ───────────────────────────────────────────────────────────── */}
+      <View style={styles.tabsWrapper}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              activeOpacity={0.75}
+              style={[styles.tab, isActive && { backgroundColor: tab.activeColor + '18' }]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <Ionicons
+                name={tab.icon as any}
+                size={18}
+                color={isActive ? tab.activeColor : '#A0AABF'}
+              />
+              <Text style={[styles.tabLabel, isActive && { color: tab.activeColor }]}>
+                {tab.label}
+              </Text>
+              {isActive && (
+                <View style={[styles.tabUnderline, { backgroundColor: tab.activeColor }]} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          CHAT TAB
+      ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'chat' && (
         <KeyboardAvoidingView
-          style={styles.chatContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={100}
+          style={[styles.flex, Platform.OS === 'android' && { marginBottom: keyboardHeight }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
         >
           <ScrollView
             ref={scrollViewRef}
-            style={styles.messagesContainer}
+            style={styles.messageList}
+            contentContainerStyle={styles.messageListContent}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd()}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={scrollToBottom}
           >
-            {messages.map((message, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.messageBubble,
-                  message.role === 'user' ? styles.userMessage : styles.assistantMessage,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.messageText,
-                    message.role === 'user' && styles.userMessageText,
-                  ]}
+            {messages.map((msg, i) => {
+              const isUser = msg.role === 'user';
+              return (
+                <View
+                  key={i}
+                  style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowBot]}
                 >
-                  {message.content}
-                </Text>
-              </View>
-            ))}
+                  {!isUser && (
+                    <View style={styles.avatar}>
+                      <Ionicons name="sparkles" size={14} color="#4F6EF7" />
+                    </View>
+                  )}
+                  <View
+                    style={[
+                      styles.bubble,
+                      isUser ? styles.bubbleUser : styles.bubbleBot,
+                      { maxWidth: SCREEN_WIDTH * 0.78 },
+                    ]}
+                  >
+                    <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>
+                      {msg.content}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
             {loading && (
-              <View style={styles.loadingContainer}>
-                <View style={styles.loadingDot} />
-                <View style={styles.loadingDot} />
-                <View style={styles.loadingDot} />
+              <View style={[styles.bubbleRow, styles.bubbleRowBot]}>
+                <View style={styles.avatar}>
+                  <Ionicons name="sparkles" size={14} color="#4F6EF7" />
+                </View>
+                <View style={[styles.bubble, styles.bubbleBot, styles.typingBubble]}>
+                  <TypingDot delay={0} />
+                  <TypingDot delay={150} />
+                  <TypingDot delay={300} />
+                </View>
               </View>
             )}
           </ScrollView>
 
-          <View style={styles.inputContainer}>
+          {/* Input bar */}
+          <View
+            style={[
+              styles.inputBar,
+              {
+                paddingBottom: Platform.OS === 'ios'
+                  ? Math.max(insets.bottom, 12)
+                  : 12,
+              },
+            ]}
+          >
             <TextInput
-              style={styles.input}
-              placeholder="Ask your question..."
+              ref={inputRef}
+              style={styles.textInput}
+              placeholder="Ask me anything…"
+              placeholderTextColor="#B0B8CC"
               value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={500}
               editable={!loading}
+              returnKeyType="default"
+              blurOnSubmit={false}
             />
             <TouchableOpacity
-              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+              style={[styles.sendBtn, (!inputText.trim() || loading) && styles.sendBtnDisabled]}
               onPress={sendMessage}
               disabled={!inputText.trim() || loading}
+              activeOpacity={0.8}
             >
-              <Ionicons name="send" size={20} color={inputText.trim() ? '#fff' : '#9CA3AF'} />
+              <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       )}
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          VOICE TAB
+      ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'voice' && (
-        <View style={styles.voiceContainer}>
-          <View style={styles.voiceContent}>
-            <Ionicons name="mic-circle" size={120} color={isListening ? '#EF4444' : '#3B82F6'} />
-            <Text style={styles.voiceTitle}>
-              {isListening ? 'Listening...' : 'Voice Assistant'}
-            </Text>
-            <Text style={styles.voiceSubtitle}>
-              {isListening
-                ? 'Speak your question clearly'
-                : 'Tap the button to start speaking'}
-            </Text>
+        <ScrollView
+          contentContainerStyle={styles.voiceTabContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Hero area */}
+          <View style={styles.voiceHero}>
+            {/* Outer glow rings */}
+            <View style={[styles.voiceRing, styles.voiceRingOuter, isListening && styles.voiceRingOuterActive]} />
+            <View style={[styles.voiceRing, styles.voiceRingMid, isListening && styles.voiceRingMidActive]} />
 
+            {/* Pulse animation */}
+            <PulseRing active={isListening} />
+
+            {/* Mic button */}
             <TouchableOpacity
-              style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
+              style={[styles.micBtn, isListening && styles.micBtnActive]}
               onPress={startVoiceInput}
               disabled={isListening}
+              activeOpacity={0.85}
             >
-              <Ionicons name="mic" size={32} color="#fff" />
+              <Ionicons name={isListening ? 'radio' : 'mic'} size={38} color="#fff" />
             </TouchableOpacity>
-
-            <View style={styles.exampleQuestions}>
-              <Text style={styles.exampleTitle}>Example questions:</Text>
-              <Text style={styles.exampleText}>• Where can I get free health checkup?</Text>
-              <Text style={styles.exampleText}>• Show me scholarship programs</Text>
-              <Text style={styles.exampleText}>• How to report a community issue?</Text>
-            </View>
           </View>
-        </View>
+
+          <Text style={styles.voiceTitle}>
+            {isListening ? 'Listening…' : 'Voice Assistant'}
+          </Text>
+          <Text style={styles.voiceHint}>
+            {isListening
+              ? 'Speak clearly — I\'m here'
+              : 'Tap the mic and ask anything'}
+          </Text>
+
+          {/* Status pill */}
+          <View style={[styles.statusPill, isListening && styles.statusPillActive]}>
+            <View style={[styles.statusPillDot, isListening && styles.statusPillDotActive]} />
+            <Text style={[styles.statusPillText, isListening && styles.statusPillTextActive]}>
+              {isListening ? 'Recording in progress' : 'Ready to listen'}
+            </Text>
+          </View>
+
+          {/* Suggestions card */}
+          <View style={styles.suggestionsCard}>
+            <Text style={styles.sectionLabel}>Try asking</Text>
+            {[
+              { q: 'Where can I get a free health checkup?', icon: 'medkit-outline' },
+              { q: 'Show me scholarship programs near me', icon: 'school-outline' },
+              { q: 'How do I report a community issue?', icon: 'megaphone-outline' },
+            ].map(({ q, icon }) => (
+              <TouchableOpacity
+                key={q}
+                style={styles.suggestionChip}
+                onPress={() => {
+                  setActiveTab('chat');
+                  setInputText(q);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.suggestionIconBox}>
+                  <Ionicons name={icon as any} size={15} color="#4F6EF7" />
+                </View>
+                <Text style={styles.suggestionText}>{q}</Text>
+                <Ionicons name="chevron-forward" size={14} color="#C4CAD8" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
       )}
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          WHATSAPP TAB
+      ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'whatsapp' && (
-        <View style={styles.whatsappContainer}>
-          <View style={styles.whatsappContent}>
-            <Ionicons name="logo-whatsapp" size={120} color="#25D366" />
-            <Text style={styles.whatsappTitle}>Continue on WhatsApp</Text>
-            <Text style={styles.whatsappSubtitle}>
-              Chat with our AI assistant on WhatsApp for instant responses
+        <ScrollView
+          contentContainerStyle={styles.centeredTabContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <View style={styles.waIconWrapper}>
+              <Ionicons name="logo-whatsapp" size={52} color="#fff" />
+            </View>
+
+            <Text style={styles.cardTitle}>Continue on WhatsApp</Text>
+            <Text style={styles.cardSubtitle}>
+              Chat with our AI assistant directly on WhatsApp for instant, on-the-go support.
             </Text>
 
-            <TouchableOpacity style={styles.whatsappButton} onPress={openWhatsApp}>
-              <Ionicons name="logo-whatsapp" size={24} color="#fff" />
-              <Text style={styles.whatsappButtonText}>Open WhatsApp Assistant</Text>
+            <TouchableOpacity style={styles.waBtn} onPress={openWhatsApp} activeOpacity={0.85}>
+              <Ionicons name="logo-whatsapp" size={20} color="#fff" />
+              <Text style={styles.waBtnText}>Open WhatsApp Assistant</Text>
             </TouchableOpacity>
 
-            <View style={styles.benefitsContainer}>
-              <View style={styles.benefit}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={styles.benefitText}>24/7 availability</Text>
+            <View style={styles.divider} />
+
+            <Text style={styles.sectionLabel}>Why WhatsApp?</Text>
+            {[
+              { icon: 'time-outline', text: '24 / 7 availability, zero wait time' },
+              { icon: 'notifications-outline', text: 'Push notifications for updates' },
+              { icon: 'attach-outline', text: 'Share photos & documents easily' },
+              { icon: 'shield-checkmark-outline', text: 'End-to-end encrypted messages' },
+            ].map(({ icon, text }) => (
+              <View key={text} style={styles.benefit}>
+                <View style={styles.benefitIcon}>
+                  <Ionicons name={icon as any} size={16} color="#25D366" />
+                </View>
+                <Text style={styles.benefitText}>{text}</Text>
               </View>
-              <View style={styles.benefit}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={styles.benefitText}>Instant notifications</Text>
-              </View>
-              <View style={styles.benefit}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={styles.benefitText}>Share documents easily</Text>
-              </View>
-            </View>
+            ))}
           </View>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
 }
 
+// ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FAFBFF',
   },
+  flex: { flex: 1 },
+
+  // Header
   header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBFF',
+  },
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#22C55E',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F1728',
+    letterSpacing: -0.6,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: 13,
+    color: '#8892A4',
+    fontWeight: '500',
+    marginTop: 2,
   },
-  tabsContainer: {
+
+  // Tabs
+  tabsWrapper: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#EAECF4',
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
     paddingVertical: 12,
-    borderRadius: 8,
+    gap: 4,
+    position: 'relative',
   },
-  tabActive: {
-    backgroundColor: '#EFF6FF',
-  },
-  tabText: {
-    fontSize: 14,
+  tabLabel: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: '#A0AABF',
   },
-  tabTextActive: {
-    color: '#3B82F6',
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 16,
+    right: 16,
+    height: 2.5,
+    borderRadius: 2,
   },
-  chatContainer: {
+
+  // Messages
+  messageList: {
     flex: 1,
+    backgroundColor: '#F4F6FB',
   },
-  messagesContainer: {
-    flex: 1,
+  messageListContent: {
     padding: 16,
+    paddingBottom: 8,
+    flexGrow: 1,
   },
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#3B82F6',
-  },
-  assistantMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#1F2937',
-    lineHeight: 20,
-  },
-  userMessageText: {
-    color: '#fff',
-  },
-  loadingContainer: {
+  bubbleRow: {
     flexDirection: 'row',
-    alignSelf: 'flex-start',
-    gap: 6,
-    padding: 16,
+    alignItems: 'flex-end',
+    marginBottom: 12,
+    gap: 8,
+  },
+  bubbleRowUser: { justifyContent: 'flex-end' },
+  bubbleRowBot: { justifyContent: 'flex-start' },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#EEF1FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#DDE2FF',
+  },
+  bubble: {
+    padding: 13,
+    borderRadius: 18,
+  },
+  bubbleUser: {
+    backgroundColor: '#4F6EF7',
+    borderBottomRightRadius: 5,
+  },
+  bubbleBot: {
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 5,
+    borderWidth: 1,
+    borderColor: '#EAECF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  bubbleText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#1A2340',
+  },
+  bubbleTextUser: { color: '#fff' },
+  typingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
   },
   loadingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#9CA3AF',
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#B0B8CC',
   },
-  inputContainer: {
+
+  // Input bar
+  inputBar: {
     flexDirection: 'row',
-    padding: 16,
+    alignItems: 'flex-end',
+    paddingHorizontal: 14,
+    paddingTop: 10,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    gap: 12,
+    borderTopColor: '#EAECF4',
+    gap: 10,
   },
-  input: {
+  textInput: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F4F6FB',
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 12,
+    fontSize: 15,
+    color: '#0F1728',
+    maxHeight: 110,
+    borderWidth: 1,
+    borderColor: '#EAECF4',
+  },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4F6EF7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#4F6EF7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#D1D5E0',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+
+  // Shared card layout for Voice & WhatsApp tabs
+  centeredTabContent: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
     borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: '#EAECF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F1728',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.4,
+  },
+  cardSubtitle: {
     fontSize: 14,
-    maxHeight: 100,
+    color: '#8892A4',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 4,
   },
-  sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3B82F6',
+  divider: {
+    height: 1,
+    backgroundColor: '#EAECF4',
+    marginVertical: 22,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#A0AABF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 14,
+  },
+
+  // Voice tab
+  voiceTabContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 36,
+    paddingBottom: 32,
+    backgroundColor: '#F4F6FB',
+    alignItems: 'center',
+  },
+  voiceHero: {
+    width: 180,
+    height: 180,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 28,
   },
-  sendButtonDisabled: {
-    backgroundColor: '#E5E7EB',
+  voiceRing: {
+    position: 'absolute',
+    borderRadius: 999,
+    borderWidth: 1.5,
   },
-  voiceContainer: {
-    flex: 1,
+  voiceRingOuter: {
+    width: 176,
+    height: 176,
+    borderColor: '#DDE2FF',
+    backgroundColor: '#F0F2FF',
+  },
+  voiceRingOuterActive: {
+    borderColor: '#FFCDD2',
+    backgroundColor: '#FFF0F0',
+  },
+  voiceRingMid: {
+    width: 136,
+    height: 136,
+    borderColor: '#C7CFFE',
+    backgroundColor: '#E8ECFF',
+  },
+  voiceRingMidActive: {
+    borderColor: '#FFAAA8',
+    backgroundColor: '#FFE4E3',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 106,
+    height: 106,
+    borderRadius: 53,
+    backgroundColor: '#EF4444',
+  },
+  micBtn: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#4F6EF7',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: '#4F6EF7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  voiceContent: {
-    alignItems: 'center',
-    padding: 32,
+  micBtnActive: {
+    backgroundColor: '#EF4444',
+    shadowColor: '#EF4444',
   },
   voiceTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 24,
+    fontWeight: '800',
+    color: '#0F1728',
+    letterSpacing: -0.5,
     marginBottom: 8,
-  },
-  voiceSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 32,
   },
-  voiceButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#3B82F6',
+  voiceHint: {
+    fontSize: 15,
+    color: '#8892A4',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  statusPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#EEF1FF',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     marginBottom: 32,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#DDE2FF',
   },
-  voiceButtonActive: {
+  statusPillActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  statusPillDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#4F6EF7',
+  },
+  statusPillDotActive: {
     backgroundColor: '#EF4444',
   },
-  exampleQuestions: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    width: '100%',
-  },
-  exampleTitle: {
-    fontSize: 14,
+  statusPillText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
+    color: '#4F6EF7',
   },
-  exampleText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
+  statusPillTextActive: {
+    color: '#EF4444',
   },
-  whatsappContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  suggestionsCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#EAECF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  whatsappContent: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  whatsappTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  whatsappSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  whatsappButton: {
+  suggestionChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: '#F8F9FF',
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#EAECF4',
+  },
+  suggestionIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#EEF1FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: '#3A4565',
+    flex: 1,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+
+  // WhatsApp tab
+  waIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: '#25D366',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 24,
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  waBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     backgroundColor: '#25D366',
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    marginBottom: 32,
+    borderRadius: 16,
+    marginTop: 22,
     shadowColor: '#25D366',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  whatsappButtonText: {
+  waBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  benefitsContainer: {
-    width: '100%',
-    gap: 12,
   },
   benefit: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginBottom: 14,
+  },
+  benefitIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#F0FDF4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
   },
   benefitText: {
     fontSize: 14,
-    color: '#1F2937',
+    color: '#3A4565',
+    fontWeight: '500',
+    flex: 1,
   },
 });

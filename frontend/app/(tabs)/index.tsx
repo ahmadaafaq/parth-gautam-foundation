@@ -34,7 +34,7 @@ export default function HomeScreen() {
 
   const loadData = async () => {
     if (!user) return;
-    
+
     try {
       const [suggestionsData, updatesData] = await Promise.all([
         suggestionsAPI.getForUser(user.id),
@@ -70,7 +70,7 @@ export default function HomeScreen() {
       title: t('applyScholarship'),
       icon: 'school',
       color: '#F59E0B',
-      onPress: () => router.push('/education'),
+      onPress: () => router.push('/education?type=scholarship' as any),
     },
     {
       id: 'issue',
@@ -84,7 +84,7 @@ export default function HomeScreen() {
       title: t('joinSkillCourse'),
       icon: 'book',
       color: '#10B981',
-      onPress: () => router.push('/education'),
+      onPress: () => router.push('/education?type=skills' as any),
     },
   ];
 
@@ -94,6 +94,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -113,7 +114,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.statusBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#10B981" />
             <Text style={styles.statusText}>{t('citizenMember')} • {t('ward')} {user.ward}</Text>
@@ -163,7 +164,11 @@ export default function HomeScreen() {
         {suggestions.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('recommendedForYou')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestionsScrollContent}
+            >
               {suggestions.map((program: any) => (
                 <TouchableOpacity key={program.id} style={styles.suggestionCard}>
                   <View style={styles.suggestionHeader}>
@@ -172,8 +177,8 @@ export default function HomeScreen() {
                         program.category === 'healthcare'
                           ? 'medical'
                           : program.category === 'education'
-                          ? 'school'
-                          : 'people'
+                            ? 'school'
+                            : 'people'
                       }
                       size={24}
                       color="#3B82F6"
@@ -217,7 +222,59 @@ export default function HomeScreen() {
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>{t('noRecentUpdates')}</Text>
+            <>
+              <View style={styles.updateCard}>
+                <View style={[styles.updateIcon, { backgroundColor: '#F0FDF4' }]}>
+                  <Ionicons name="sparkles" size={20} color="#10B981" />
+                </View>
+                <View style={styles.updateContent}>
+                  <Text style={styles.updateTitle}>Ward {user.ward} Digital Literacy Drive 🎉</Text>
+                  <Text style={styles.updateDate}>Today • 10:30 AM</Text>
+                </View>
+                <View style={styles.updateBadge}>
+                  <Text style={[styles.updateBadgeText, { color: '#10B981' }]}>SUCCESS</Text>
+                </View>
+              </View>
+
+              <View style={styles.updateCard}>
+                <View style={[styles.updateIcon, { backgroundColor: '#EFF6FF' }]}>
+                  <Ionicons name="megaphone" size={20} color="#3B82F6" />
+                </View>
+                <View style={styles.updateContent}>
+                  <Text style={styles.updateTitle}>New Mobile Health Van Schedule Added</Text>
+                  <Text style={styles.updateDate}>Yesterday • 2:15 PM</Text>
+                </View>
+                <View style={styles.updateBadge}>
+                  <Text style={[styles.updateBadgeText, { color: '#3B82F6' }]}>NOTICE</Text>
+                </View>
+              </View>
+
+              <View style={styles.updateCard}>
+                <View style={[styles.updateIcon, { backgroundColor: '#FFF7ED' }]}>
+                  <Ionicons name="construct" size={20} color="#F59E0B" />
+                </View>
+                <View style={styles.updateContent}>
+                  <Text style={styles.updateTitle}>Community Hall Renovation Town Hall</Text>
+                  <Text style={styles.updateDate}>Mar 10, 2026</Text>
+                </View>
+                <View style={styles.updateBadge}>
+                  <Text style={[styles.updateBadgeText, { color: '#F59E0B' }]}>EVENT</Text>
+                </View>
+              </View>
+
+              <View style={styles.updateCard}>
+                <View style={[styles.updateIcon, { backgroundColor: '#FDF4FF' }]}>
+                  <Ionicons name="trophy" size={20} color="#8B5CF6" />
+                </View>
+                <View style={styles.updateContent}>
+                  <Text style={styles.updateTitle}>10 Citizens Earned Volunteer Badges</Text>
+                  <Text style={styles.updateDate}>Mar 9, 2026</Text>
+                </View>
+                <View style={styles.updateBadge}>
+                  <Text style={[styles.updateBadgeText, { color: '#8B5CF6' }]}>AWARD</Text>
+                </View>
+              </View>
+            </>
           )}
         </View>
 
@@ -234,6 +291,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   header: {
     padding: 24,
@@ -335,13 +395,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F2937',
     marginBottom: 16,
+  },
+  suggestionsScrollContent: {
+    paddingRight: 16,
+    paddingBottom: 12, // Room for shadow
   },
   quickActionsGrid: {
     flexDirection: 'row',
@@ -455,6 +521,18 @@ const styles = StyleSheet.create({
   updateDate: {
     fontSize: 12,
     color: '#6B7280',
+  },
+  updateBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  updateBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   emptyText: {
     fontSize: 14,

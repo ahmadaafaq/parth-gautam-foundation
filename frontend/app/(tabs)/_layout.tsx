@@ -2,8 +2,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HeaderRight = () => (
   <View style={{ marginRight: 16 }}>
@@ -13,6 +14,7 @@ const HeaderRight = () => (
 
 export default function TabLayout() {
   const { t } = useLanguageStore();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -25,8 +27,8 @@ export default function TabLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
-          height: 60,
-          paddingBottom: 8,
+          height: Platform.OS === 'ios' ? 88 : 58 + insets.bottom,
+          paddingBottom: Platform.OS === 'ios' ? 28 : insets.bottom + 6,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
@@ -68,7 +70,7 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           title: t('programs'),
-          tabBarIcon: ({ color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <Ionicons name="grid" size={size} color={color} />
           ),
         }}

@@ -41,7 +41,7 @@ export default function HealthcareScreen() {
   const services = [
     {
       id: 'doctor',
-      title: 'Book Doctor',
+      title: 'Health Care',
       description: 'Schedule appointments with doctors',
       icon: 'medical',
       color: '#EF4444',
