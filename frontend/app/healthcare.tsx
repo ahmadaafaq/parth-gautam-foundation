@@ -97,9 +97,13 @@ export default function HealthcareScreen() {
               <TouchableOpacity
                 key={service.id}
                 style={styles.serviceCard}
-                onPress={() =>
-                  Alert.alert(service.title, 'This feature will be available soon!')
-                }
+                onPress={() => {
+                  if (service.id === 'camp') {
+                    router.push('/health-camps');
+                  } else {
+                    Alert.alert(service.title, 'This feature will be available soon!');
+                  }
+                }}
               >
                 <View style={[styles.serviceIcon, { backgroundColor: service.color + '20' }]}>
                   <Ionicons name={service.icon as any} size={28} color={service.color} />
@@ -115,14 +119,18 @@ export default function HealthcareScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Upcoming Health Camps</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/health-camps')}>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
 
           {programs.length > 0 ? (
             programs.map((program: any) => (
-              <TouchableOpacity key={program.id} style={styles.programCard}>
+              <TouchableOpacity 
+                key={program.id} 
+                style={styles.programCard}
+                onPress={() => router.push(`/health-camps/${program.id}`)}
+              >
                 <View style={styles.programHeader}>
                   <View style={styles.programIconContainer}>
                     <Ionicons name="medical" size={24} color="#EF4444" />
@@ -150,9 +158,9 @@ export default function HealthcareScreen() {
                 )}
                 <TouchableOpacity
                   style={styles.registerButton}
-                  onPress={() => Alert.alert('Success', 'Registration successful!')}
+                  onPress={() => router.push(`/health-camps/${program.id}`)}
                 >
-                  <Text style={styles.registerButtonText}>Register Now</Text>
+                  <Text style={styles.registerButtonText}>View Details</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))

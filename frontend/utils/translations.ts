@@ -44,7 +44,7 @@ export const translations = {
     viewCard: 'कार्ड देखें',
     myBenefits: 'मेरे लाभ',
     quickActions: 'त्वरित कार्य',
-    bookDoctor: 'स्वास्थ्य देखभाल`',
+    bookDoctor: 'स्वास्थ्य देखभाल',
     applyScholarship: 'छात्रवृत्ति के लिए आवेदन करें',
     reportIssue: 'समस्या रिपोर्ट करें',
     joinSkillCourse: 'स्किल कोर्स में शामिल हों',

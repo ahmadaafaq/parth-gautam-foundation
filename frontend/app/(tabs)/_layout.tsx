@@ -1,16 +1,9 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { View, Platform } from 'react-native';
 import React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const HeaderRight = () => (
-  <View style={{ marginRight: 16 }}>
-    <LanguageSwitcher />
-  </View>
-);
 
 export default function TabLayout() {
   const { t } = useLanguageStore();
@@ -20,7 +13,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        headerRight: () => <HeaderRight />,
         tabBarActiveTintColor: '#3B82F6',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
@@ -78,6 +70,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="card"
         options={{
+          headerShown: false,
           title: t('card'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="card" size={size} color={color} />

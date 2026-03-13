@@ -5,10 +5,10 @@ import { Platform } from 'react-native';
 // On Android emulator, `localhost` of the host machine is reachable via 10.0.2.2.
 // On a real device or Expo Go on a physical phone, replace with your machine's
 // LAN IP address, e.g. http://192.168.1.100:8001
-const BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8001/api'
-    : 'http://localhost:8001/api';
+const BASE_URL = "http://192.168.1.5:8001/api"
+// Platform.OS === 'android'
+//   ? 'http://10.0.2.2:8001/api'
+//   : 'http://localhost:8001/api';
 
 const api = axios.create({
   baseURL: BASE_URL,

@@ -5,7 +5,6 @@ import { useAuthStore } from '../store/authStore';
 import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -23,10 +22,6 @@ export default function WelcomeScreen() {
       colors={['#0EA5E9', '#3B82F6', '#6366F1']}
       style={styles.container}
     >
-      <View style={styles.languageSwitcherContainer}>
-        <LanguageSwitcher />
-      </View>
-
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons name="people-circle" size={120} color="#fff" />
@@ -76,12 +71,6 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  languageSwitcherContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 1,
   },
   content: {
     flex: 1,

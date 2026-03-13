@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suggestionsAPI, updatesAPI } from '../../utils/api';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -108,7 +107,6 @@ export default function HomeScreen() {
               <Text style={styles.userName}>{user.name}</Text>
             </View>
             <View style={styles.headerActions}>
-              <LanguageSwitcher />
               <TouchableOpacity style={styles.notificationButton}>
                 <Ionicons name="notifications-outline" size={24} color="#fff" />
               </TouchableOpacity>
@@ -164,8 +162,8 @@ export default function HomeScreen() {
         {suggestions.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('recommendedForYou')}</Text>
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.suggestionsScrollContent}
             >

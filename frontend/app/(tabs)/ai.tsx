@@ -15,7 +15,7 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { chatAPI } from '../../utils/api';
@@ -182,18 +182,7 @@ export default function AIAssistantScreen() {
   ] as const;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFBFF" />
-
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <View style={styles.headerBadge}>
-          <View style={styles.statusDot} />
-          <Text style={styles.badgeText}>Online</Text>
-        </View>
-        <Text style={styles.headerTitle}>AI Assistant</Text>
-        <Text style={styles.headerSubtitle}>Community Services · Powered by GPT-4</Text>
-      </View>
+    <View style={styles.safeArea}>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
       <View style={styles.tabsWrapper}>
@@ -432,7 +421,7 @@ export default function AIAssistantScreen() {
           </View>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

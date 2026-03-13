@@ -14,7 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
 import { useLanguageStore } from '../../store/languageStore';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function ProgramsScreen() {
   const router = useRouter();
@@ -26,6 +25,7 @@ export default function ProgramsScreen() {
     community: [],
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedPillar, setSelectedPillar] = useState<string | null>(null);
 
   const loadPrograms = async () => {
     try {
@@ -48,6 +48,18 @@ export default function ProgramsScreen() {
     setRefreshing(true);
     await loadPrograms();
     setRefreshing(false);
+  };
+
+  const handlePillarPress = (pillarId: string, route: string) => {
+    // Set selected pillar for visual feedback
+    setSelectedPillar(pillarId);
+
+    // Navigate after a small delay to show feedback
+    setTimeout(() => {
+      router.push(route as any);
+      // Reset selected pillar after navigation
+      setSelectedPillar(null);
+    }, 100);
   };
 
   const pillars = [
@@ -87,7 +99,6 @@ export default function ProgramsScreen() {
           <Text style={styles.headerTitle}>{t('programsHub')}</Text>
           <Text style={styles.headerSubtitle}>{t('exploreOpportunities')}</Text>
         </View>
-        <LanguageSwitcher />
       </View>
 
       <ScrollView
@@ -101,16 +112,25 @@ export default function ProgramsScreen() {
           {pillars.map((pillar) => (
             <TouchableOpacity
               key={pillar.id}
-              style={styles.pillarCard}
-              onPress={() => router.push(pillar.route as any)}
+              style={[
+                styles.pillarCard,
+                selectedPillar === pillar.id && styles.pillarCardPressed
+              ]}
+              onPress={() => handlePillarPress(pillar.id, pillar.route)}
+              activeOpacity={0.9}
             >
-              <LinearGradient colors={pillar.gradient} style={styles.pillarGradient}>
+              <LinearGradient
+                colors={pillar.gradient}
+                style={styles.pillarGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
                 <View style={styles.pillarIcon}>
                   <Ionicons name={pillar.icon as any} size={40} color="#fff" />
                 </View>
                 <Text style={styles.pillarTitle}>{pillar.title}</Text>
                 <Text style={styles.pillarDescription}>{pillar.description}</Text>
-                
+
                 <View style={styles.pillarStats}>
                   <View style={styles.stat}>
                     <Text style={styles.statNumber}>
@@ -146,8 +166,8 @@ export default function ProgramsScreen() {
                           program.category === 'healthcare'
                             ? '#FEE2E2'
                             : program.category === 'education'
-                            ? '#FEF3C7'
-                            : '#EDE9FE',
+                              ? '#FEF3C7'
+                              : '#EDE9FE',
                       },
                     ]}
                   >
@@ -156,16 +176,16 @@ export default function ProgramsScreen() {
                         program.category === 'healthcare'
                           ? 'medical'
                           : program.category === 'education'
-                          ? 'school'
-                          : 'people'
+                            ? 'school'
+                            : 'people'
                       }
                       size={24}
                       color={
                         program.category === 'healthcare'
                           ? '#EF4444'
                           : program.category === 'education'
-                          ? '#F59E0B'
-                          : '#8B5CF6'
+                            ? '#F59E0B'
+                            : '#8B5CF6'
                       }
                     />
                   </View>
@@ -234,6 +254,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
+  },
+  pillarCardPressed: {
+    transform: [{ scale: 0.98 }],
   },
   pillarGradient: {
     padding: 24,
