@@ -1,0 +1,53 @@
+[
+  {
+    "id": "14c19f8a-f28e-4603-8d78-da496159a3fa",
+    "status": "ERRORED",
+    "platform": "ANDROID",
+    "error": {
+      "errorCode": "UNKNOWN_ERROR",
+      "message": "Unknown error. See logs of the Prebuild build phase for more information."
+    },
+    "artifacts": {},
+    "fingerprint": {
+      "id": "019cec02-04fa-7e2d-ba2e-69726d1568c6",
+      "hash": "f123c4df653be36b031af67784c4769f75e8e68d"
+    },
+    "initiatingActor": {
+      "id": "cf173684-5989-434d-8dc3-6481419e89c0",
+      "displayName": "theanasiqbal"
+    },
+    "logFiles": [
+      "https://job-logs.eascdn.net/production/14c19f8a-f28e-4603-8d78-da496159a3fa/1773486081502-c8263ee0-525e-4758-8cda-eb22190bf124.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260314%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260314T111411Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=5f3206aba3d6589d155be45147b35d25e96988eaa0f222a44fa4d450a0f7d5ddfe6bcd3d6499b54598d93d00ef956a1e2e8e75a609fd887b972d9a98a0c37d967feff5657068637710d3ee1337e73288511083333b429452a7ef45de033d5f3363866f40af9fed143eadb5bb8655d66a9ebed300b7f311385bb4c3a7501ed6493732629803e6f91f046e9c96bc3a4ad785b2773a49723f6cadd4c5c7ceca49678f59a7d16376f528f59111ab1e73c69afe69b2af424626f1994475db54fd8a17669debb9c0da2223fb3ef632e0d78d0af35293cec7741134d0f4f4bb769f5165d1669328e6ccedc6bb69b8ab3f3a99f1d73ae82fa77e6adf2c433a48cacde0d1",
+      "https://job-logs.eascdn.net/production/14c19f8a-f28e-4603-8d78-da496159a3fa/1773486085518-6c848b14-cf08-430a-a3a5-075ea9f12733.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260314%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260314T111411Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=4abd4c6ecfc4daf280a34581a3bde693a976f09c557e1682c11dbabada8e14a048b605fc4e0a99cd2b0db269a012621e6e72d87ae868f4c439cf1fc2015a09cd78c9bf771fc42c7fb6998f8c0250049c0703e398c1ea4d293526d4e1d6baa324f992181cb8238a48a58dc8858b4977572a0cadac629fbb56557b999f6f1f4a3f5e9aac1ec3b7cc9e992096fab9ca4c5808efc8506e8f209caef99609a1f7f07610f010cf7752b9e4369ba7b07c27d5a7eccad576c229d6922cc2816ec4dc23d81b7fe2a17ecab1a90d14c7e787584011f6e958f73c681061dba008cb1230e7c8050dbb28e617c63a0f5423565f976d25bfa631394faea19af77bd8b8c21e3ed2",
+      "https://job-logs.eascdn.net/production/14c19f8a-f28e-4603-8d78-da496159a3fa/1773486085786-a0177018-9074-4374-9123-524a1a9deeb8.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260314%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260314T111411Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=620daa3c117e52f9781d2ec3ee234a5333762cef9b47e0ef1cf4f22797779108a7372c03d8dc41cebea920cba31cd351e950f116c8cd66f281bf1464fb19b8fe5f7aa2344d70959076ac5f57ce5724d2d6c32940874031d787b190509a9b63822c4c3b024daeb184f08c2a7cf5b23c47a7bf5cfbdba097e76ea5f2da3c7d15c520788d75d7d966077e7ec6d93b644da2c978fc2c635179945f5dc07fabb32bf07acabe301d0cd083c27e93105d158517cfe3452f9b285be948ea0d96f32ded8ff538f71e2fb4817af963527d0fdf9ee059288a1db647d5fdbc82426b6d59d703c0908bb882c3b3d8a93086f2d4c98200377c3e24cff34c13becd9f203fb6ca64",
+      "https://job-logs.eascdn.net/production/14c19f8a-f28e-4603-8d78-da496159a3fa/1773486085979-dbeb477e-ca36-4a40-8f3b-d621c9e95686.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260314%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260314T111411Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=22156e3656cf836c1082bd0311a76c4b2b31d60e5bea2abd5925cd8b636712465b3390bf2b4a4aef82c14b8baf1b22ba705e85f8578207ef6a44dbddbf0ac33f6be80862705fafee08a8de738778bcc6a95d5fb34672077196f8cb14918f3f20b8e513db1fb78b35254d5b7515ab840198b2dd46dec4905ce0a7e96e86d69570e24591abed749695cadffa29820b69404d1790491ab9331293b07403256e218614506898defda715c92f5439053c23d432981204f06b2790142d8fafa2c82a9707793aa655baff71ab06d2869ce88c91b84b50eb5fd9954c54a0446c20df4787960635ed2c0986c157d6177804554071aee8e6963d7b83e6cff6662ddd90c9d6"
+    ],
+    "project": {
+      "id": "a4fe81e8-f6f4-4060-a7fb-17f79c7bef5d",
+      "name": "PG-Foundation",
+      "slug": "pg-foundation",
+      "ownerAccount": {
+        "id": "5cb4bd4f-f9f9-420e-9e56-e068e02106a7",
+        "name": "theanasiqbal"
+      }
+    },
+    "distribution": "INTERNAL",
+    "buildProfile": "preview",
+    "sdkVersion": "54.0.0",
+    "appVersion": "1.0.0",
+    "appBuildVersion": "1",
+    "gitCommitHash": "784d2c653cd33494b9d46310a9b246fdbed0012b",
+    "gitCommitMessage": "Initial commit",
+    "priority": "NORMAL_PLUS",
+    "createdAt": "2026-03-14T11:01:21.168Z",
+    "updatedAt": "2026-03-14T11:02:36.625Z",
+    "completedAt": "2026-03-14T11:02:30.538Z",
+    "expirationDate": "2026-03-28T11:01:21.249Z",
+    "isForIosSimulator": false,
+    "metrics": {
+      "buildWaitTime": 229,
+      "buildQueueTime": 40276,
+      "buildDuration": 28315
+    }
+  }
+]
