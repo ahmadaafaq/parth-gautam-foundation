@@ -13,9 +13,11 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../utils/api';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function HealthcareScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const [programs, setPrograms] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -41,29 +43,29 @@ export default function HealthcareScreen() {
   const services = [
     {
       id: 'doctor',
-      title: 'Health Care',
-      description: 'Schedule appointments with doctors',
+      title: t('bookDoctor'),
+      description: t('accessHealthcare'),
       icon: 'medical',
       color: '#EF4444',
     },
     {
       id: 'camp',
-      title: 'Health Camps',
-      description: 'Free health checkups and camps',
+      title: t('healthCamps'),
+      description: t('instantHealthAdvice'),
       icon: 'fitness',
       color: '#F59E0B',
     },
     {
       id: 'telehealth',
-      title: 'Teleconsultation',
-      description: 'Online doctor consultations',
+      title: t('teleconsultation'),
+      description: t('available24x7'),
       icon: 'videocam',
       color: '#10B981',
     },
     {
       id: 'advice',
-      title: 'Health Advice',
-      description: 'AI-powered health guidance',
+      title: t('healthAdvice'),
+      description: t('instantHealthAdvice'),
       icon: 'heart',
       color: '#8B5CF6',
     },
@@ -77,8 +79,8 @@ export default function HealthcareScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="medical" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>Smart Healthcare</Text>
-          <Text style={styles.headerSubtitle}>Access quality healthcare services</Text>
+          <Text style={styles.headerTitle}>{t('smartHealthcare')}</Text>
+          <Text style={styles.headerSubtitle}>{t('accessHealthcare')}</Text>
         </View>
       </LinearGradient>
 
@@ -91,7 +93,7 @@ export default function HealthcareScreen() {
       >
         {/* Services Grid */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Healthcare Services</Text>
+          <Text style={styles.sectionTitle}>{t('healthcareServices')}</Text>
           <View style={styles.servicesGrid}>
             {services.map((service) => (
               <TouchableOpacity
@@ -118,9 +120,9 @@ export default function HealthcareScreen() {
         {/* Health Camps */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Health Camps</Text>
+            <Text style={styles.sectionTitle}>{t('upcomingHealthCamps')}</Text>
             <TouchableOpacity onPress={() => router.push('/health-camps')}>
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -151,7 +153,7 @@ export default function HealthcareScreen() {
                     {program.seats_available && (
                       <View style={styles.seatsContainer}>
                         <Ionicons name="people" size={14} color="#10B981" />
-                        <Text style={styles.seatsText}>{program.seats_available} seats</Text>
+                        <Text style={styles.seatsText}>{program.seats_available} {t('seats')}</Text>
                       </View>
                     )}
                   </View>
@@ -160,14 +162,14 @@ export default function HealthcareScreen() {
                   style={styles.registerButton}
                   onPress={() => router.push(`/health-camps/${program.id}`)}
                 >
-                  <Text style={styles.registerButtonText}>View Details</Text>
+                  <Text style={styles.registerButtonText}>{t('viewDetails')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>No upcoming camps</Text>
+              <Text style={styles.emptyText}>{t('noUpcomingCamps')}</Text>
             </View>
           )}
         </View>
@@ -182,9 +184,9 @@ export default function HealthcareScreen() {
               <View style={styles.aiContent}>
                 <Ionicons name="chatbubbles" size={40} color="#fff" />
                 <View style={styles.aiText}>
-                  <Text style={styles.aiTitle}>Ask Health AI</Text>
+                  <Text style={styles.aiTitle}>{t('askHealthAI')}</Text>
                   <Text style={styles.aiDescription}>
-                    Get instant health advice and guidance
+                    {t('instantHealthAdvice')}
                   </Text>
                 </View>
               </View>

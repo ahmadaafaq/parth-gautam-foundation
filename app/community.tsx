@@ -16,9 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '../store/authStore';
 import { issuesAPI } from '../utils/api';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function CommunityScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('volunteer'); // volunteer, report, events
   const [issueForm, setIssueForm] = useState({
@@ -29,11 +31,11 @@ export default function CommunityScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const issueTypes = [
-    { id: 'water', label: 'Water Supply', icon: 'water' },
-    { id: 'electricity', label: 'Electricity', icon: 'flash' },
-    { id: 'roads', label: 'Roads', icon: 'car' },
-    { id: 'garbage', label: 'Garbage', icon: 'trash' },
-    { id: 'other', label: 'Other', icon: 'alert-circle' },
+    { id: 'water', label: t('waterSupply'), icon: 'water' },
+    { id: 'electricity', label: t('electricity'), icon: 'flash' },
+    { id: 'roads', label: t('roads'), icon: 'car' },
+    { id: 'garbage', label: t('garbage'), icon: 'trash' },
+    { id: 'other', label: t('other'), icon: 'alert-circle' },
   ];
 
   const handleSubmitIssue = async () => {
@@ -101,8 +103,8 @@ export default function CommunityScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="people" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>Community Impact</Text>
-          <Text style={styles.headerSubtitle}>Make a difference together</Text>
+          <Text style={styles.headerTitle}>{t('communityImpact')}</Text>
+          <Text style={styles.headerSubtitle}>{t('makeDifference')}</Text>
         </View>
       </LinearGradient>
 
@@ -112,7 +114,7 @@ export default function CommunityScreen() {
           onPress={() => setActiveTab('volunteer')}
         >
           <Text style={[styles.tabText, activeTab === 'volunteer' && styles.tabTextActive]}>
-            Volunteer
+            {t('volunteer')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -120,7 +122,7 @@ export default function CommunityScreen() {
           onPress={() => setActiveTab('report')}
         >
           <Text style={[styles.tabText, activeTab === 'report' && styles.tabTextActive]}>
-            Report Issue
+            {t('reportIssue')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -128,7 +130,7 @@ export default function CommunityScreen() {
           onPress={() => setActiveTab('events')}
         >
           <Text style={[styles.tabText, activeTab === 'events' && styles.tabTextActive]}>
-            Events
+            {t('events')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -136,7 +138,7 @@ export default function CommunityScreen() {
       {activeTab === 'volunteer' && (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Volunteer Opportunities</Text>
+            <Text style={styles.sectionTitle}>{t('volunteerOpportunities')}</Text>
             {volunteerPrograms.map((program) => (
               <TouchableOpacity key={program.id} style={styles.programCard}>
                 <View style={[styles.programIcon, { backgroundColor: program.color + '20' }]}>
@@ -157,7 +159,7 @@ export default function CommunityScreen() {
                   <View style={styles.volunteersInfo}>
                     <Ionicons name="people" size={16} color="#8B5CF6" />
                     <Text style={styles.volunteersText}>
-                      {program.volunteers} volunteers needed
+                      {program.volunteers} {t('volunteersNeeded')}
                     </Text>
                   </View>
                 </View>
@@ -165,7 +167,7 @@ export default function CommunityScreen() {
                   style={styles.joinButton}
                   onPress={() => Alert.alert('Success', 'You have joined this program!')}
                 >
-                  <Text style={styles.joinButtonText}>Join</Text>
+                  <Text style={styles.joinButtonText}>{t('join')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -180,9 +182,9 @@ export default function CommunityScreen() {
         >
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Report a Community Issue</Text>
+              <Text style={styles.sectionTitle}>{t('reportCommunityIssue')}</Text>
               
-              <Text style={styles.label}>Issue Type *</Text>
+              <Text style={styles.label}>{t('issueType')} *</Text>
               <View style={styles.issueTypesGrid}>
                 {issueTypes.map((type) => (
                   <TouchableOpacity
@@ -210,20 +212,20 @@ export default function CommunityScreen() {
                 ))}
               </View>
 
-              <Text style={styles.label}>Description *</Text>
+              <Text style={styles.label}>{t('description')} *</Text>
               <TextInput
                 style={styles.textArea}
-                placeholder="Describe the issue in detail..."
+                placeholder={t('describeIssue')}
                 value={issueForm.description}
                 onChangeText={(text) => setIssueForm({ ...issueForm, description: text })}
                 multiline
                 numberOfLines={4}
               />
 
-              <Text style={styles.label}>Location *</Text>
+              <Text style={styles.label}>{t('location')} *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter location or landmark"
+                placeholder={t('enterLocation')}
                 value={issueForm.location}
                 onChangeText={(text) => setIssueForm({ ...issueForm, location: text })}
               />
@@ -233,7 +235,7 @@ export default function CommunityScreen() {
                 onPress={() => Alert.alert('Photo Upload', 'Photo upload feature coming soon!')}
               >
                 <Ionicons name="camera" size={20} color="#6B7280" />
-                <Text style={styles.attachButtonText}>Add Photo (Optional)</Text>
+                <Text style={styles.attachButtonText}>{t('addPhoto')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -242,7 +244,7 @@ export default function CommunityScreen() {
                 disabled={submitting}
               >
                 <Text style={styles.submitButtonText}>
-                  {submitting ? 'Submitting...' : 'Report Issue'}
+                  {submitting ? t('submitting') : t('submitIssue')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -253,11 +255,11 @@ export default function CommunityScreen() {
       {activeTab === 'events' && (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Community Events</Text>
+            <Text style={styles.sectionTitle}>{t('upcomingEvents')}</Text>
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>No upcoming events</Text>
-              <Text style={styles.emptySubtext}>Check back later for new events</Text>
+              <Text style={styles.emptyText}>{t('noUpcomingEvents')}</Text>
+              <Text style={styles.emptySubtext}>{t('checkBackLater')}</Text>
             </View>
           </View>
         </ScrollView>

@@ -36,8 +36,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, isAuthenticated: !!user });
   },
   
-  logout: async () => {
-    await AsyncStorage.removeItem('user');
+  logout: () => {
+    AsyncStorage.removeItem('user').catch(console.error);
     set({ user: null, isAuthenticated: false });
   },
   

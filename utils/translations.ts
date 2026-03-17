@@ -1,8 +1,8 @@
 export const translations = {
   hi: {
     // Welcome Screen
-    welcomeTitle: 'में आपका स्वागत है',
     welcomeSubtitle: 'पार्थ गौतम फाउंडेशन',
+    welcomeTitle: 'में आपका स्वागत है',
     welcomeDescription: 'नागरिकों को स्वास्थ्य, शिक्षा और अवसरों से जोड़ना',
     continueWithMobile: 'मोबाइल नंबर से जारी रखें',
     continueWithWhatsApp: 'WhatsApp से जारी रखें',
@@ -27,11 +27,29 @@ export const translations = {
     occupation: 'व्यवसाय',
     selectInterests: 'अपनी रुचियां चुनें',
     jobs: 'नौकरियां',
-    volunteer: 'स्वयंसेवी कार्य',
+    volunteer: 'स्वयंसेवक',
     communityIssues: 'सामुदायिक मुद्दे',
     continue: 'जारी रखें',
     getStarted: 'शुरू करें',
     pleaseWait: 'कृपया प्रतीक्षा करें...',
+
+    // Age Groups
+    age_under_18: '18 से कम',
+    age_18_25: '18-25',
+    age_26_35: '26-35',
+    age_36_45: '36-45',
+    age_46_60: '46-60',
+    age_60_plus: '60+',
+
+    // Occupations
+    occ_student: 'छात्र',
+    occ_gov_job: 'सरकारी नौकरी',
+    occ_private_job: 'प्राइवेट नौकरी',
+    occ_business: 'व्यवसाय',
+    occ_farmer: 'किसान',
+    occ_homemaker: 'गृहणी',
+    occ_retired: 'सेवानिवृत्त',
+    occ_other: 'अन्य',
 
     // Home Dashboard
     goodMorning: 'सुप्रभात',
@@ -46,7 +64,7 @@ export const translations = {
     quickActions: 'त्वरित कार्य',
     bookDoctor: 'स्वास्थ्य देखभाल',
     applyScholarship: 'छात्रवृत्ति के लिए आवेदन करें',
-    reportIssue: 'समस्या रिपोर्ट करें',
+    reportIssue: 'समस्या की रिपोर्ट करें',
     joinSkillCourse: 'स्किल कोर्स में शामिल हों',
     recommendedForYou: 'आपके लिए सुझाए गए',
     communityUpdates: 'समुदाय अपडेट',
@@ -101,6 +119,7 @@ export const translations = {
     askHealthAI: 'स्वास्थ्य AI से पूछें',
     instantHealthAdvice: 'तुरंत स्वास्थ्य सलाह और मार्गदर्शन प्राप्त करें',
     seats: 'सीटें',
+    viewDetails: 'विवरण देखें',
 
     // Education
     educationServices: 'शिक्षा सेवाएं',
@@ -116,7 +135,6 @@ export const translations = {
     personalizedCareerAdvice: 'व्यक्तिगत करियर सलाह और सुझाव प्राप्त करें',
 
     // Community
-    volunteerOpportunities: 'स्वयंसेवी अवसर',
     reportCommunityIssue: 'सामुदायिक समस्या रिपोर्ट करें',
     events: 'कार्यक्रम',
     issueType: 'समस्या का प्रकार',
@@ -137,6 +155,24 @@ export const translations = {
     upcomingEvents: 'आगामी कार्यक्रम',
     noUpcomingEvents: 'कोई आगामी कार्यक्रम नहीं',
     checkBackLater: 'नए कार्यक्रमों के लिए बाद में जांचें',
+    volunteerOpportunities: 'स्वयंसेवी अवसर',
+
+    // Health Camps
+    healthCampsSubtitle: 'अपने आस-पास मुफ्त स्वास्थ्य जांच और कार्यक्रमों के बारे में जानें',
+    searchByTitleLocation: 'शीर्षक या स्थान के आधार पर खोजें...',
+    findingHealthCamps: 'स्वास्थ्य शिविर मिल रहे हैं...',
+    event: 'कार्यक्रम',
+    left: 'शेष',
+    noHealthCampsFound: 'कोई स्वास्थ्य शिविर नहीं मिला',
+    tryAdjustingFilters: 'अपनी खोज या फ़िल्टर को समायोजित करने का प्रयास करें।',
+    failedToLoadDetails: 'विवरण लोड करने में विफल। कृपया पुनतः प्रयास करें।',
+    pleaseLoginRegister: 'पंजीकरण करने के लिए कृपया लॉग इन करें।',
+    campNotFound: 'शिविर नहीं मिला',
+    registeredSuccessfully: 'सफलतापूर्वक पंजीकृत',
+    seatsLeft: 'सीटें शेष',
+    aboutThisCamp: 'इस शिविर के बारे में',
+    noDescriptionProvided: 'कोई विवरण प्रदान नहीं किया गया।',
+    campFull: 'शिविर भरा हुआ है',
 
     // City Map
     cityMap: 'शहर का नक्शा',
@@ -178,10 +214,10 @@ export const translations = {
     error: 'त्रुटि',
     loading: 'लोड हो रहा है...',
     noData: 'कोई डेटा नहीं',
-    tryAgain: 'पुनः प्रयास करें',
+    tryAgain: 'पुनतः प्रयास करें',
     language: 'भाषा',
     hindi: 'हिंदी',
-    english: 'अंग्रेजी',
+    english: 'English',
   },
   en: {
     // Welcome Screen
@@ -211,11 +247,29 @@ export const translations = {
     occupation: 'Occupation',
     selectInterests: 'Select Your Interests',
     jobs: 'Jobs',
-    volunteer: 'Volunteer Work',
+    volunteer: 'Volunteer',
     communityIssues: 'Community Issues',
     continue: 'Continue',
     getStarted: 'Get Started',
     pleaseWait: 'Please wait...',
+
+    // Age Groups
+    age_under_18: 'Under 18',
+    age_18_25: '18-25',
+    age_26_35: '26-35',
+    age_36_45: '36-45',
+    age_46_60: '46-60',
+    age_60_plus: '60+',
+
+    // Occupations
+    occ_student: 'Student',
+    occ_gov_job: 'Government Job',
+    occ_private_job: 'Private Job',
+    occ_business: 'Business',
+    occ_farmer: 'Farmer',
+    occ_homemaker: 'Homemaker',
+    occ_retired: 'Retired',
+    occ_other: 'Other',
 
     // Home Dashboard
     goodMorning: 'Good Morning',
@@ -285,6 +339,7 @@ export const translations = {
     askHealthAI: 'Ask Health AI',
     instantHealthAdvice: 'Get instant health advice and guidance',
     seats: 'seats',
+    viewDetails: 'View Details',
 
     // Education
     educationServices: 'Education Services',
@@ -300,7 +355,6 @@ export const translations = {
     personalizedCareerAdvice: 'Get personalized career advice and recommendations',
 
     // Community
-    volunteerOpportunities: 'Volunteer Opportunities',
     reportCommunityIssue: 'Report a Community Issue',
     events: 'Events',
     issueType: 'Issue Type',
@@ -321,6 +375,24 @@ export const translations = {
     upcomingEvents: 'Upcoming Community Events',
     noUpcomingEvents: 'No upcoming events',
     checkBackLater: 'Check back later for new events',
+    volunteerOpportunities: 'Volunteer Opportunities',
+
+    // Health Camps
+    healthCampsSubtitle: 'Discover free health checkups & events near you',
+    searchByTitleLocation: 'Search by title or location...',
+    findingHealthCamps: 'Finding health camps...',
+    event: 'Event',
+    left: 'left',
+    noHealthCampsFound: 'No Health Camps Found',
+    tryAdjustingFilters: 'Try adjusting your search or filters.',
+    failedToLoadDetails: 'Failed to load details. Please try again.',
+    pleaseLoginRegister: 'Please log in to register.',
+    campNotFound: 'Camp Not Found',
+    registeredSuccessfully: 'Registered Successfully',
+    seatsLeft: 'Seats Left',
+    aboutThisCamp: 'About This Camp',
+    noDescriptionProvided: 'No description provided.',
+    campFull: 'Camp Full',
 
     // City Map
     cityMap: 'City Map',

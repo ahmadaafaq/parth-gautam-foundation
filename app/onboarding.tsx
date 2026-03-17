@@ -345,17 +345,24 @@ export default function OnboardingScreen() {
                 {t('ageGroup')}
               </Text>
               <View style={styles.ageChipsRow}>
-                {['Under 18', '18–25', '26–35', '36–45', '46–60', '60+'].map((range) => {
-                  const active = formData.age_group === range;
+                {[
+                  { id: 'Under 18', label: t('age_under_18') },
+                  { id: '18–25', label: t('age_18_25') },
+                  { id: '26–35', label: t('age_26_35') },
+                  { id: '36–45', label: t('age_36_45') },
+                  { id: '46–60', label: t('age_46_60') },
+                  { id: '60+', label: t('age_60_plus') }
+                ].map((item) => {
+                  const active = formData.age_group === item.id;
                   return (
                     <TouchableOpacity
-                      key={range}
+                      key={item.id}
                       style={[styles.ageChip, active && styles.ageChipActive]}
-                      onPress={() => setFormData((prev) => ({ ...prev, age_group: range }))}
+                      onPress={() => setFormData((prev) => ({ ...prev, age_group: item.id }))}
                       activeOpacity={0.75}
                     >
                       <Text style={[styles.ageChipText, active && styles.ageChipTextActive]}>
-                        {range}
+                        {item.label}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -376,19 +383,25 @@ export default function OnboardingScreen() {
               <Text style={styles.interestsLabel}>{t('occupation')}</Text>
               <View style={styles.ageChipsRow}>
                 {[
-                  'Student', 'Government Job', 'Private Job',
-                  'Business', 'Farmer', 'Homemaker', 'Retired', 'Other'
-                ].map((occ) => {
-                  const active = formData.occupation === occ;
+                  { id: 'Student', label: t('occ_student') },
+                  { id: 'Government Job', label: t('occ_gov_job') },
+                  { id: 'Private Job', label: t('occ_private_job') },
+                  { id: 'Business', label: t('occ_business') },
+                  { id: 'Farmer', label: t('occ_farmer') },
+                  { id: 'Homemaker', label: t('occ_homemaker') },
+                  { id: 'Retired', label: t('occ_retired') },
+                  { id: 'Other', label: t('occ_other') }
+                ].map((item) => {
+                  const active = formData.occupation === item.id;
                   return (
                     <TouchableOpacity
-                      key={occ}
+                      key={item.id}
                       style={[styles.ageChip, active && styles.ageChipActive]}
-                      onPress={() => setFormData((prev) => ({ ...prev, occupation: occ }))}
+                      onPress={() => setFormData((prev) => ({ ...prev, occupation: item.id }))}
                       activeOpacity={0.75}
                     >
                       <Text style={[styles.ageChipText, active && styles.ageChipTextActive]}>
-                        {occ}
+                        {item.label}
                       </Text>
                     </TouchableOpacity>
                   );

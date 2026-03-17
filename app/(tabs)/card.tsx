@@ -51,7 +51,13 @@ export default function CitizenCardScreen() {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#3B82F6" style={{ flex: 1 }} />
+      </SafeAreaView>
+    );
+  }
 
   const handleLogout = () => {
     Alert.alert(t('logout'), 'Are you sure you want to logout?', [
@@ -61,9 +67,7 @@ export default function CitizenCardScreen() {
         style: 'destructive',
         onPress: () => {
           logout();
-          setTimeout(() => {
-            router.replace('/');
-          }, 100);
+          router.replace('/' as any);
         },
       },
     ]);

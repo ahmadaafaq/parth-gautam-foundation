@@ -2,12 +2,22 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
 import { View, Platform } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '../../store/authStore';
+import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
   const { t } = useLanguageStore();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/' as any);
+    }
+  }, [isAuthenticated]);
 
   return (
     <Tabs

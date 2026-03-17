@@ -5,6 +5,8 @@ import { useAuthStore } from '../store/authStore';
 import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -22,13 +24,19 @@ export default function WelcomeScreen() {
       colors={['#0EA5E9', '#3B82F6', '#6366F1']}
       style={styles.container}
     >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <LanguageSwitcher />
+        </View>
+      </SafeAreaView>
+
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons name="people-circle" size={120} color="#fff" />
         </View>
-        
-        <Text style={styles.title}>{t('welcomeTitle')}</Text>
+
         <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
+        <Text style={styles.title}>{t('welcomeTitle')}</Text>
         <Text style={styles.description}>{t('welcomeDescription')}</Text>
 
         <View style={styles.pillarsContainer}>
@@ -77,6 +85,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    marginTop: -40, // Offset for the language switcher
+  },
+  safeArea: {
+    width: '100%',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    alignItems: 'flex-end',
   },
   iconContainer: {
     marginBottom: 32,
