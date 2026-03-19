@@ -53,9 +53,9 @@ export default function CitizenCardScreen() {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#3B82F6" style={{ flex: 1 }} />
-      </SafeAreaView>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
     );
   }
 
@@ -65,9 +65,8 @@ export default function CitizenCardScreen() {
       {
         text: t('logout'),
         style: 'destructive',
-        onPress: () => {
-          logout();
-          router.replace('/' as any);
+        onPress: async () => {
+          await logout();
         },
       },
     ]);
@@ -204,20 +203,20 @@ export default function CitizenCardScreen() {
             <Text style={styles.sectionTitle}>{t('recentActivity')}</Text>
             {loading && <ActivityIndicator size="small" color="#3B82F6" />}
           </View>
-          
+
           {activities.length > 0 ? (
             activities.map((activity) => (
               <View key={activity.id} style={styles.activityItem}>
-                <View style={[styles.activityIconBox, { 
-                  backgroundColor: activity.programs?.category === 'Healthcare' ? '#FEF2F2' : 
-                                 activity.programs?.category === 'Education' ? '#FFFBEB' : '#F0FDF4' 
+                <View style={[styles.activityIconBox, {
+                  backgroundColor: activity.programs?.category === 'Healthcare' ? '#FEF2F2' :
+                    activity.programs?.category === 'Education' ? '#FFFBEB' : '#F0FDF4'
                 }]}>
-                  <Ionicons 
-                    name={activity.programs?.category === 'Healthcare' ? 'medical' : 
-                          activity.programs?.category === 'Education' ? 'school' : 'people'} 
-                    size={20} 
-                    color={activity.programs?.category === 'Healthcare' ? '#EF4444' : 
-                           activity.programs?.category === 'Education' ? '#F59E0B' : '#10B981'} 
+                  <Ionicons
+                    name={activity.programs?.category === 'Healthcare' ? 'medical' :
+                      activity.programs?.category === 'Education' ? 'school' : 'people'}
+                    size={20}
+                    color={activity.programs?.category === 'Healthcare' ? '#EF4444' :
+                      activity.programs?.category === 'Education' ? '#F59E0B' : '#10B981'}
                   />
                 </View>
                 <View style={styles.activityContent}>

@@ -43,8 +43,8 @@ export default function HealthcareScreen() {
   const services = [
     {
       id: 'doctor',
-      title: t('bookDoctor'),
-      description: t('accessHealthcare'),
+      title: 'Book Appointment',
+      description: 'Schedule appointments with doctors',
       icon: 'medical',
       color: '#EF4444',
     },
@@ -64,8 +64,8 @@ export default function HealthcareScreen() {
     },
     {
       id: 'advice',
-      title: t('healthAdvice'),
-      description: t('instantHealthAdvice'),
+      title: 'Health Summary',
+      description: 'AI-powered health summary',
       icon: 'heart',
       color: '#8B5CF6',
     },
@@ -102,6 +102,12 @@ export default function HealthcareScreen() {
                 onPress={() => {
                   if (service.id === 'camp') {
                     router.push('/health-camps');
+                  } else if (service.id === 'doctor') {
+                    router.push('/book-appointment');
+                  } else if (service.id === 'telehealth') {
+                    router.push('/teleconsultation');
+                  } else if (service.id === 'advice') {
+                    router.push('/health-summary');
                   } else {
                     Alert.alert(service.title, 'This feature will be available soon!');
                   }
@@ -175,7 +181,7 @@ export default function HealthcareScreen() {
         </View>
 
         {/* Health AI Assistant */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <TouchableOpacity
             style={styles.aiCard}
             onPress={() => router.push('/(tabs)/ai')}
@@ -193,7 +199,7 @@ export default function HealthcareScreen() {
               <Ionicons name="arrow-forward" size={24} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={{ height: 24 }} />
       </ScrollView>

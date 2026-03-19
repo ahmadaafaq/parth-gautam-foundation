@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -26,12 +25,8 @@ export default function EducationScreen() {
   const isScholarship = type === 'scholarship';
   const isSkills = type === 'skills';
   const headerIcon = isScholarship ? 'school' : isSkills ? 'construct' : 'school';
-  const headerTitle = isScholarship ? t('scholarships') : isSkills ? t('skillTraining') : t('aiEducation');
-  const headerSubtitle = isScholarship
-    ? t('applyScholarship')
-    : isSkills
-      ? t('skillTraining')
-      : t('learnGrowSucceed');
+  const headerTitle = "Education";
+  const headerSubtitle = "Learn, grow, and succeed";
 
   const loadPrograms = async () => {
     try {
@@ -59,6 +54,7 @@ export default function EducationScreen() {
       description: t('applyScholarship'),
       icon: 'school',
       color: '#F59E0B',
+      route: '/scholarships',
     },
     {
       id: 'skills',
@@ -66,6 +62,7 @@ export default function EducationScreen() {
       description: t('skillCourseAccess'),
       icon: 'construct',
       color: '#10B981',
+      route: '/skill-training',
     },
     {
       id: 'career',
@@ -73,13 +70,7 @@ export default function EducationScreen() {
       description: t('personalizedCareerAdvice'),
       icon: 'briefcase',
       color: '#8B5CF6',
-    },
-    {
-      id: 'jobs',
-      title: t('jobOpportunities'),
-      description: t('jobs'),
-      icon: 'newspaper',
-      color: '#EF4444',
+      route: '/career-guidance',
     },
   ];
 
@@ -111,9 +102,7 @@ export default function EducationScreen() {
               <TouchableOpacity
                 key={service.id}
                 style={styles.serviceCard}
-                onPress={() =>
-                  Alert.alert(service.title, 'This feature will be available soon!')
-                }
+                onPress={() => router.push(service.route as any)}
               >
                 <View style={[styles.serviceIcon, { backgroundColor: service.color + '20' }]}>
                   <Ionicons name={service.icon as any} size={28} color={service.color} />
@@ -177,7 +166,7 @@ export default function EducationScreen() {
                 )}
                 <TouchableOpacity
                   style={styles.applyButton}
-                  onPress={() => Alert.alert('Success', 'Application submitted!')}
+                  onPress={() => console.log('Application submitted')}
                 >
                   <Text style={styles.applyButtonText}>
                     {program.subcategory === 'scholarship' ? t('applyNow') : t('enrollNow')}

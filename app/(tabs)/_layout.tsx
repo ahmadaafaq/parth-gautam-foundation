@@ -1,11 +1,10 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
 import { View, Platform } from 'react-native';
 import React, { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
-import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
   const { t } = useLanguageStore();

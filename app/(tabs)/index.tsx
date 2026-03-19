@@ -85,13 +85,13 @@ export default function HomeScreen() {
     {
       id: 'course',
       title: t('joinSkillCourse'),
-      icon: 'book',
+      icon: 'briefcase',
       color: '#10B981',
-      onPress: () => router.push('/education?type=skills' as any),
+      onPress: () => router.push('/jobs' as any),
     },
   ];
 
-  if (!user) return null;
+  if (!user) return <View style={styles.container} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
