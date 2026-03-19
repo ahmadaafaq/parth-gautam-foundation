@@ -1,147 +1,264 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Platform,
+  Image,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../store/authStore';
 import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
   const { t } = useLanguageStore();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace('/(tabs)');
-    }
-  }, [isAuthenticated]);
 
   return (
     <LinearGradient
-      colors={['#0EA5E9', '#3B82F6', '#6366F1']}
+      colors={['#0284C7', '#1D4ED8', '#312E81']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="people-circle" size={120} color="#fff" />
-        </View>
-        
-        <Text style={styles.title}>{t('welcomeTitle')}</Text>
-        <Text style={styles.subtitle}>{t('welcomeSubtitle')}</Text>
-        <Text style={styles.description}>{t('welcomeDescription')}</Text>
+      {/* Decorative background blobs */}
+      <View style={styles.blobTopLeft} />
+      <View style={styles.blobBottomRight} />
 
-        <View style={styles.pillarsContainer}>
-          <View style={styles.pillar}>
-            <Ionicons name="medical" size={24} color="#fff" />
-            <Text style={styles.pillarText}>{t('healthcare')}</Text>
-          </View>
-          <View style={styles.pillar}>
-            <Ionicons name="school" size={24} color="#fff" />
-            <Text style={styles.pillarText}>{t('education')}</Text>
-          </View>
-          <View style={styles.pillar}>
-            <Ionicons name="people" size={24} color="#fff" />
-            <Text style={styles.pillarText}>{t('community')}</Text>
-          </View>
+      <SafeAreaView style={styles.safeArea}>
+        {/* Language switcher */}
+        <View style={styles.header}>
+          <LanguageSwitcher />
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/onboarding')}
-        >
-          <Ionicons name="phone-portrait" size={24} color="#3B82F6" />
-          <Text style={styles.buttonText}>{t('continueWithMobile')}</Text>
-        </TouchableOpacity>
+        {/* Hero section */}
+        <View style={styles.hero}>
+          {/* Circular logo with glowing ring */}
+          <View style={styles.logoOuter}>
+            <View style={styles.logoInner}>
+              <Image
+                source={require('../assets/images/pg-logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
 
-        <TouchableOpacity
-          style={[styles.button, styles.whatsappButton]}
-          onPress={() => router.push('/onboarding')}
-        >
-          <Ionicons name="logo-whatsapp" size={24} color="#fff" />
-          <Text style={[styles.buttonText, styles.whatsappButtonText]}>
-            {t('continueWithWhatsApp')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Welcome badge */}
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>✦  WELCOME TO  ✦</Text>
+          </View>
+
+          {/* App name */}
+          <Text style={styles.appName}>{t('welcomeSubtitle')}</Text>
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Description */}
+          <Text style={styles.description}>{t('welcomeDescription')}</Text>
+        </View>
+
+        {/* Bottom buttons */}
+        <View style={styles.footer}>
+          {/* Register — solid white */}
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            activeOpacity={0.85}
+            onPress={() => router.push('/onboarding')}
+          >
+            <Ionicons name="person-add-outline" size={20} color="#1D4ED8" style={styles.btnIcon} />
+            <Text style={styles.primaryBtnText}>{t('continueWithMobile')}</Text>
+          </TouchableOpacity>
+
+          {/* Login — glass */}
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            activeOpacity={0.85}
+            onPress={() => router.push('/login')}
+          >
+            <Ionicons name="log-in-outline" size={20} color="#fff" style={styles.btnIcon} />
+            <Text style={styles.secondaryBtnText}>{t('login')}</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
+const LOGO = 140;
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+
+  /* Decorative blobs for depth */
+  blobTopLeft: {
+    position: 'absolute',
+    top: -80,
+    left: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  content: {
+  blobBottomRight: {
+    position: 'absolute',
+    bottom: -100,
+    right: -80,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+
+  safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? 36 : 0,
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    alignItems: 'flex-end',
+  },
+
+  /* ── Hero ── */
+  hero: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: 28,
   },
-  iconContainer: {
+
+  /* Glowing ring around logo */
+  logoOuter: {
+    width: LOGO + 24,
+    height: LOGO + 24,
+    borderRadius: (LOGO + 24) / 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 32,
+    shadowColor: '#60A5FA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: '#E0F2FE',
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 24,
-  },
-  pillarsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 48,
-  },
-  pillar: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  pillarText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  logoInner: {
+    width: LOGO,
+    height: LOGO,
+    borderRadius: LOGO / 2,
     backgroundColor: '#fff',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginBottom: 16,
-    width: '100%',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
-    flex: 1,
-    textAlign: 'center',
+  logo: {
+    width: LOGO * 0.7,
+    height: LOGO * 0.7,
   },
-  whatsappButton: {
-    backgroundColor: '#25D366',
+
+  /* Pill badge "WELCOME TO" */
+  badge: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  whatsappButtonText: {
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 2.5,
+  },
+
+  /* App name */
+  appName: {
+    fontSize: 30,
+    fontWeight: '900',
     color: '#fff',
+    textAlign: 'center',
+    lineHeight: 38,
+    marginBottom: 20,
+  },
+
+  /* Divider */
+  divider: {
+    width: 56,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    marginBottom: 20,
+  },
+
+  description: {
+    fontSize: 15.5,
+    color: 'rgba(255,255,255,0.72)',
+    textAlign: 'center',
+    lineHeight: 25,
+    maxWidth: 300,
+  },
+
+  /* ── Footer ── */
+  footer: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    gap: 12,
+  },
+
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 17,
+    borderRadius: 16,
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1D4ED8',
+    textAlign: 'center',
+    flex: 1,
+  },
+
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    paddingVertical: 17,
+    borderRadius: 16,
+  },
+  secondaryBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    flex: 1,
+  },
+
+  btnIcon: {
+    position: 'absolute',
+    left: 20,
   },
 });

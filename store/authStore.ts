@@ -18,6 +18,7 @@ interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isLoaded: boolean;
   setUser: (user: User | null) => void;
   logout: () => void;
   loadUser: () => Promise<void>;
@@ -26,7 +27,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
-  
+  isLoaded: false,
+
   setUser: (user) => {
     if (user) {
       AsyncStorage.setItem('user', JSON.stringify(user)).catch(console.error);
@@ -35,21 +37,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set({ user, isAuthenticated: !!user });
   },
-  
+
   logout: async () => {
     await AsyncStorage.removeItem('user');
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, isLoaded: true });
   },
-  
+
   loadUser: async () => {
     try {
       const userString = await AsyncStorage.getItem('user');
       if (userString) {
         const user = JSON.parse(userString);
-        set({ user, isAuthenticated: true });
+        set({ user, isAuthenticated: true, isLoaded: true }); // ← add isLoaded
+      } else {
+        set({ isLoaded: true }); // ← add isLoaded
       }
     } catch (error) {
       console.error('Error loading user:', error);
+      set({ isLoaded: true }); // ← always set true even on error
     }
   },
 }));
