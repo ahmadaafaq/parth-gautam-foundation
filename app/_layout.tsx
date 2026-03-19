@@ -21,10 +21,12 @@ export default function RootLayout() {
     if (!isLoaded) return; // ← CRITICAL: wait for AsyncStorage
 
     const inTabsGroup = segments[0] === '(tabs)';
+    const isRoot = !segments[0];
+    const isAuthGateway = ['login', 'otp', 'onboarding'].includes(segments[0] as any);
 
-    if (isAuthenticated && !inTabsGroup) {
+    if (isAuthenticated && (isRoot || isAuthGateway)) {
       router.replace('/(tabs)' as any);
-    } else if (!isAuthenticated && inTabsGroup) {
+    } else if (!isAuthenticated && !isRoot && !isAuthGateway) {
       router.replace('/' as any);
     }
   }, [isAuthenticated, segments, isLoaded]); // ← add isLoaded
