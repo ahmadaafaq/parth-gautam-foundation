@@ -88,7 +88,7 @@ const PulseRing = ({ active }: { active: boolean }) => {
 export default function AIAssistantScreen() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<'chat' | 'voice' | 'whatsapp'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'voice'>('chat');
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -163,22 +163,11 @@ export default function AIAssistantScreen() {
     });
   };
 
-  const openWhatsApp = () => {
-    const phoneNumber = '1234567890';
-    const message = encodeURIComponent(
-      `Hi! I'm ${user?.name} (Citizen ID: ${user?.citizen_id}). I need assistance with community services.`
-    );
-    const url = `whatsapp://send?phone=${phoneNumber}&text=${message}`;
-    Linking.canOpenURL(url)
-      .then((ok) => (ok ? Linking.openURL(url) : Alert.alert('WhatsApp Not Installed', 'Please install WhatsApp to continue.')))
-      .catch(() => Alert.alert('Error', 'Could not open WhatsApp'));
-  };
 
   // ── Tab bar ──────────────────────────────────────────────────────────────────
   const TABS = [
     { key: 'chat', label: 'Chat', icon: 'chatbubble-ellipses', activeColor: '#4F6EF7' },
     { key: 'voice', label: 'Voice', icon: 'mic', activeColor: '#4F6EF7' },
-    { key: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', activeColor: '#25D366' },
   ] as const;
 
   return (
@@ -379,48 +368,6 @@ export default function AIAssistantScreen() {
         </ScrollView>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          WHATSAPP TAB
-      ══════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'whatsapp' && (
-        <ScrollView
-          contentContainerStyle={styles.centeredTabContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <View style={styles.waIconWrapper}>
-              <Ionicons name="logo-whatsapp" size={52} color="#fff" />
-            </View>
-
-            <Text style={styles.cardTitle}>Continue on WhatsApp</Text>
-            <Text style={styles.cardSubtitle}>
-              Chat with our AI assistant directly on WhatsApp for instant, on-the-go support.
-            </Text>
-
-            <TouchableOpacity style={styles.waBtn} onPress={openWhatsApp} activeOpacity={0.85}>
-              <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-              <Text style={styles.waBtnText}>Open WhatsApp Assistant</Text>
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
-
-            <Text style={styles.sectionLabel}>Why WhatsApp?</Text>
-            {[
-              { icon: 'time-outline', text: '24 / 7 availability, zero wait time' },
-              { icon: 'notifications-outline', text: 'Push notifications for updates' },
-              { icon: 'attach-outline', text: 'Share photos & documents easily' },
-              { icon: 'shield-checkmark-outline', text: 'End-to-end encrypted messages' },
-            ].map(({ icon, text }) => (
-              <View key={text} style={styles.benefit}>
-                <View style={styles.benefitIcon}>
-                  <Ionicons name={icon as any} size={16} color="#25D366" />
-                </View>
-                <Text style={styles.benefitText}>{text}</Text>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      )}
     </View>
   );
 }

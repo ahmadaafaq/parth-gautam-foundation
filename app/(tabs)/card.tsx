@@ -23,7 +23,6 @@ export default function CitizenCardScreen() {
   const { user, logout, setUser } = useAuthStore();
   const { t } = useLanguageStore();
   const router = useRouter();
-
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,12 +37,31 @@ export default function CitizenCardScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [freshUser, history] = await Promise.all([
-        userAPI.getById(user!.id),
-        userAPI.getActivity(user!.id),
-      ]);
+      const freshUser = await userAPI.getById(user!.id);
+
+      const mockHistory = [
+        {
+          id: 'a1',
+          programs: { title: 'Mega Health Camp', category: 'Healthcare' },
+          registered_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          status: 'Attended'
+        },
+        {
+          id: 'a2',
+          programs: { title: 'Digital Literacy Workshop', category: 'Education' },
+          registered_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+          status: 'Attended'
+        },
+        {
+          id: 'a3',
+          programs: { title: 'Community Cleanup Drive', category: 'Community' },
+          registered_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+          status: 'Registered'
+        }
+      ];
+
       setUser(freshUser);
-      setActivities(history);
+      setActivities(mockHistory);
     } catch (error) {
       console.error('Error loading card data:', error);
     } finally {

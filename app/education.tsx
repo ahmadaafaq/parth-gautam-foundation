@@ -12,60 +12,82 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../utils/api';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function EducationScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const { type } = useLocalSearchParams<{ type?: string }>();
-  const [programs, setPrograms] = useState([]);
+  const mockPrograms = [
+    {
+      id: 'ed1',
+      title: 'Merit Scholarship 2024',
+      description: 'Financial assistance for top-performing students in board exams.',
+      location: 'Statewide',
+      date: '15th Nov 2024',
+      subcategory: 'scholarship',
+      seats_available: 500
+    },
+    {
+      id: 'ed2',
+      title: 'Digital Literacy Workshop',
+      description: 'Learn fundamental computer and internet skills.',
+      location: 'Community Center, Ward 2',
+      date: 'Next Weekend',
+      subcategory: 'skill_training',
+      seats_available: 30
+    },
+    {
+      id: 'ed3',
+      title: 'Career Counseling Session',
+      description: 'One-on-one guidance for high school graduates.',
+      location: 'Virtual',
+      date: 'Every Saturday',
+      subcategory: 'career',
+      seats_available: 100
+    }
+  ];
+
+  const [programs, setPrograms] = useState<any[]>(mockPrograms);
   const [refreshing, setRefreshing] = useState(false);
 
   // Determine context: scholarship, skills, or general
   const isScholarship = type === 'scholarship';
   const isSkills = type === 'skills';
   const headerIcon = isScholarship ? 'school' : isSkills ? 'construct' : 'school';
-  const headerTitle = "Education";
-  const headerSubtitle = "Learn, grow, and succeed";
-
-  const loadPrograms = async () => {
-    try {
-      const data = await programsAPI.getAll('education');
-      setPrograms(data);
-    } catch (error) {
-      console.error('Error loading education programs:', error);
-    }
-  };
+  const headerTitle = t('education');
+  const headerSubtitle = t('learnGrowSucceed');
 
   useEffect(() => {
-    loadPrograms();
+    setPrograms(mockPrograms);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPrograms();
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   const services = [
     {
       id: 'scholarship',
-      title: 'Scholarships',
-      description: 'Apply for education scholarships',
+      title: t('scholarships'),
+      description: t('applyForEducationScholarships'),
       icon: 'school',
       color: '#F59E0B',
       route: '/scholarships',
     },
     {
       id: 'skills',
-      title: 'Skill Training',
-      description: 'Free skill development courses',
+      title: t('skillTraining'),
+      description: t('freeSkillDevelopmentCourses'),
       icon: 'construct',
       color: '#10B981',
       route: '/skill-training',
     },
     {
       id: 'career',
-      title: 'Career Guidance',
-      description: 'Professional career counseling',
+      title: t('careerGuidance'),
+      description: t('professionalCareerCounseling'),
       icon: 'briefcase',
       color: '#8B5CF6',
       route: '/career-guidance',
@@ -94,7 +116,7 @@ export default function EducationScreen() {
       >
         {/* Services Grid */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Education Services</Text>
+          <Text style={styles.sectionTitle}>{t('educationServices')}</Text>
           <View style={styles.servicesGrid}>
             {services.map((service) => (
               <TouchableOpacity
@@ -115,9 +137,9 @@ export default function EducationScreen() {
         {/* Programs */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Available Programs</Text>
+            <Text style={styles.sectionTitle}>{t('availablePrograms')}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -157,7 +179,7 @@ export default function EducationScreen() {
                     {program.seats_available && (
                       <View style={styles.seatsContainer}>
                         <Ionicons name="people" size={14} color="#10B981" />
-                        <Text style={styles.seatsText}>{program.seats_available} seats</Text>
+                        <Text style={styles.seatsText}>{program.seats_available} {t('seats')}</Text>
                       </View>
                     )}
                   </View>
@@ -167,7 +189,7 @@ export default function EducationScreen() {
                   onPress={() => console.log('Application submitted')}
                 >
                   <Text style={styles.applyButtonText}>
-                    {program.subcategory === 'scholarship' ? 'Apply Now' : 'Enroll Now'}
+                    {program.subcategory === 'scholarship' ? t('applyNow') : t('enrollNow')}
                   </Text>
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -175,7 +197,7 @@ export default function EducationScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="book-outline" size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>No programs available</Text>
+              <Text style={styles.emptyText}>{t('noProgramsAvailable')}</Text>
             </View>
           )}
         </View>
@@ -190,9 +212,9 @@ export default function EducationScreen() {
               <View style={styles.aiContent}>
                 <Ionicons name="chatbubbles" size={40} color="#fff" />
                 <View style={styles.aiText}>
-                  <Text style={styles.aiTitle}>AI Career Assistant</Text>
+                  <Text style={styles.aiTitle}>{t('aiCareerAssistant')}</Text>
                   <Text style={styles.aiDescription}>
-                    Get personalized career advice and recommendations
+                    {t('personalizedCareerAdvice')}
                   </Text>
                 </View>
               </View>

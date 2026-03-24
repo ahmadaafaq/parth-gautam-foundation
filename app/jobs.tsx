@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Job Data ──────────────────────────────────────────────────────────────
 const JOBS = [
@@ -177,22 +178,22 @@ const JOBS = [
   },
 ];
 
-const FILTERS = ['All', 'Full-time', 'Part-time', 'Remote'];
+const FILTERS = ['all', 'fullTime', 'partTime', 'remote'];
 
 // ─── Service cards ─────────────────────────────────────────────────────────────
 const JOB_SERVICES = [
   {
     id: 'interview',
-    title: 'Interview Preparation',
-    description: 'Mock questions, sample answers & tips',
+    titleKey: 'interviewPreparation',
+    descriptionKey: 'mockQuestionsAndTips',
     icon: 'people',
     color: '#3B82F6',
     route: '/interview-prep',
   },
   {
     id: 'resume',
-    title: 'Resume Builder',
-    description: 'Create a professional resume in minutes',
+    titleKey: 'resumeBuilder',
+    descriptionKey: 'createProfessionalResume',
     icon: 'document-text',
     color: '#10B981',
     route: '/resume-builder',
@@ -208,6 +209,8 @@ function JobDetailModal({
   job: typeof JOBS[0];
   onClose: () => void;
 }) {
+  const { t } = useLanguageStore();
+  
   return (
     <Modal visible animationType="slide" transparent>
       <View style={md.overlay}>
@@ -233,11 +236,11 @@ function JobDetailModal({
               <Chip icon="calendar-outline" label={`Posted ${job.posted}`} />
             </View>
 
-            <Section title="About the Role" icon="document-text-outline">
+            <Section title={t('aboutTheRole')} icon="document-text-outline">
               <Text style={md.bodyText}>{job.description}</Text>
             </Section>
 
-            <Section title="Requirements" icon="checkmark-circle-outline">
+            <Section title={t('requirements')} icon="checkmark-circle-outline">
               {job.requirements.map((r, i) => (
                 <View key={i} style={md.bulletRow}>
                   <View style={[md.bullet, { backgroundColor: job.color }]} />
@@ -246,7 +249,7 @@ function JobDetailModal({
               ))}
             </Section>
 
-            <Section title="How to Apply" icon="send-outline">
+            <Section title={t('howToApply')} icon="send-outline">
               <Text style={md.bodyText}>{job.howToApply}</Text>
             </Section>
 
@@ -257,7 +260,7 @@ function JobDetailModal({
           <View style={md.cta}>
             <TouchableOpacity style={[md.applyBtn, { backgroundColor: job.color }]} onPress={onClose}>
               <Ionicons name="send" size={18} color="#fff" />
-              <Text style={md.applyBtnText}>Apply Now</Text>
+              <Text style={md.applyBtnText}>{t('applyNow')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -337,10 +340,20 @@ const md = StyleSheet.create({
 // ─── Main Jobs Screen ───────────────────────────────────────────────────────────
 export default function JobsScreen() {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const { t } = useLanguageStore();
+  const [activeFilter, setActiveFilter] = useState('all');
   const [selectedJob, setSelectedJob] = useState<typeof JOBS[0] | null>(null);
 
-  const filtered = activeFilter === 'All' ? JOBS : JOBS.filter((j) => j.type === activeFilter);
+  const getFilterType = (key: string) => {
+    switch (key) {
+      case 'fullTime': return 'Full-time';
+      case 'partTime': return 'Part-time';
+      case 'remote': return 'Remote';
+      default: return 'All';
+    }
+  };
+
+  const filtered = activeFilter === 'all' ? JOBS : JOBS.filter((j) => j.type === getFilterType(activeFilter));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -350,8 +363,8 @@ export default function JobsScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="briefcase" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>Jobs & Careers</Text>
-          <Text style={styles.headerSubtitle}>Discover opportunities and build your career</Text>
+          <Text style={styles.headerTitle}>{t('jobsAndCareers')}</Text>
+          <Text style={styles.headerSubtitle}>{t('discoverOpportunities')}</Text>
         </View>
       </LinearGradient>
 
@@ -359,7 +372,7 @@ export default function JobsScreen() {
 
         {/* Service Cards */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tools & Resources</Text>
+          <Text style={styles.sectionTitle}>{t('toolsAndResources')}</Text>
           <View style={styles.servicesGrid}>
             {JOB_SERVICES.map((service) => (
               <TouchableOpacity
@@ -371,8 +384,8 @@ export default function JobsScreen() {
                 <View style={[styles.serviceIcon, { backgroundColor: service.color + '20' }]}>
                   <Ionicons name={service.icon as any} size={28} color={service.color} />
                 </View>
-                <Text style={styles.serviceTitle}>{service.title}</Text>
-                <Text style={styles.serviceDescription}>{service.description}</Text>
+                <Text style={styles.serviceTitle}>{t(service.titleKey as any)}</Text>
+                <Text style={styles.serviceDescription}>{t(service.descriptionKey as any)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -381,7 +394,7 @@ export default function JobsScreen() {
         {/* Job Opportunities */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Job Opportunities</Text>
+            <Text style={styles.sectionTitle}>{t('jobOpportunities')}</Text>
             <Text style={styles.countText}>{filtered.length} jobs</Text>
           </View>
 
@@ -393,7 +406,7 @@ export default function JobsScreen() {
                 style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
                 onPress={() => setActiveFilter(f)}
               >
-                <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
+                <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{t(f as any)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>

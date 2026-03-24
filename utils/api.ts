@@ -61,21 +61,40 @@ export const programsAPI = {
     return res.data;
   },
 
-  create: async (programData: {
-    title: string;
-    description: string;
-    category: string;
-    subcategory: string;
-    location: string;
-    ward: string;
-    date?: string;
-    seats_available?: number;
-    image?: string;
-    latitude?: number;
-    longitude?: number;
-  }) => {
+  create: async (programData: any) => {
     const res = await api.post('/programs', programData);
     return res.data;
+  },
+};
+
+// ─── Health Camps API ────────────────────────────────────────────────────────
+export const healthCampsAPI = {
+  getAll: async (category?: string, ward?: string) => {
+    const params: Record<string, string> = {};
+    if (category) params.category = category;
+    if (ward) params.ward = ward;
+    const res = await api.get('/health-camps', { params });
+    return res.data;
+  },
+
+  getById: async (id: string) => {
+    const res = await api.get(`/health-camps/${id}`);
+    return res.data;
+  },
+};
+
+// ─── Health Camp Registrations API ───────────────────────────────────────────
+export const healthCampRegistrationsAPI = {
+  register: async (registrationData: { camp_id: string; user_id: string }) => {
+    const res = await api.post('/health-camp-registrations', registrationData);
+    return res.data;
+  },
+
+  checkStatus: async (camp_id: string, user_id: string) => {
+    const res = await api.get('/health-camp-registrations/check', {
+      params: { camp_id, user_id },
+    });
+    return res.data; // { registered: boolean, registration: any }
   },
 };
 

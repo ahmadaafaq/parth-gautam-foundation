@@ -15,17 +15,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { programsAPI, registrationsAPI } from '../../utils/api';
+import { healthCampsAPI, healthCampRegistrationsAPI } from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguageStore } from '../../store/languageStore';
 import { HealthCamp } from './index';
-
-interface Program extends HealthCamp { }
 
 export default function HealthCampDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user } = useAuthStore();
+  const { t } = useLanguageStore();
   const router = useRouter();
-  const [program, setProgram] = useState<Program | null>(null);
+  const [program, setProgram] = useState<HealthCamp | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -37,10 +37,50 @@ export default function HealthCampDetailScreen() {
     }
   }, [id, user]);
 
+  const mockHealthCamps = [
+    {
+      id: 'hc1',
+      title: 'Free Mega Health Camp',
+      description: 'Comprehensive health checkup including blood tests, eye exam, and general physician consultation.',
+      category: 'General',
+      subcategory: 'Checkup',
+      location: 'Community Hall, Ward 1',
+      ward: 'Ward 1',
+      date: new Date(Date.now() + 86400000 * 2).toISOString(),
+      seats_available: 50,
+      image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
+      created_at: new Date().toISOString(),
+      is_active: true,
+      registrations_count: 120,
+      tags: ['Free', 'Checkup'],
+      contact_info: '9876543210',
+      latitude: 0,
+      longitude: 0,
+    },
+    {
+      id: 'hc2',
+      title: 'Eye Checkup Drive',
+      description: 'Free eye checkup and distribution of spectacles.',
+      category: 'Specialized',
+      subcategory: 'Eye',
+      location: 'City Hospital',
+      ward: 'Ward 3',
+      date: new Date(Date.now() + 86400000 * 5).toISOString(),
+      seats_available: 100,
+      image: 'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&w=800&q=80',
+      created_at: new Date().toISOString(),
+      is_active: true,
+      registrations_count: 45,
+      tags: ['Eye', 'Free'],
+      contact_info: '9876543211',
+      latitude: 0,
+      longitude: 0,
+    }
+  ];
+
   const checkRegistrationStatus = async () => {
     try {
-      const status = await registrationsAPI.checkStatus(id as string, user!.id);
-      setRegistered(status.registered);
+      setRegistered(false);
     } catch (error) {
       console.error('Error checking registration status:', error);
     }
@@ -48,11 +88,10 @@ export default function HealthCampDetailScreen() {
 
   const loadProgram = async () => {
     try {
-
-      const data = await programsAPI.getById(id as string);
-      setProgram(data);
+      const data = mockHealthCamps.find(c => c.id === id) || mockHealthCamps[0];
+      setProgram(data as HealthCamp);
     } catch (error) {
-      console.error('Error loading program details:', error);
+      console.error('Error loading health camp details:', error);
       Alert.alert('Error', 'Failed to load camp details. Please try again.');
     } finally {
       setLoading(false);
@@ -77,12 +116,7 @@ export default function HealthCampDetailScreen() {
     }
 
     setRegistering(true);
-    try {
-      await registrationsAPI.register({
-        program_id: id as string,
-        user_id: user.id
-      });
-      
+    setTimeout(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRegistered(true);
       if (program) {
@@ -93,12 +127,8 @@ export default function HealthCampDetailScreen() {
         });
       }
       Alert.alert('Success', 'You have successfully registered for this health camp! We will send you a reminder before the event.');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to register. Please try again.');
-    } finally {
       setRegistering(false);
-    }
+    }, 1000);
   };
 
   if (loading) {
@@ -113,9 +143,9 @@ export default function HealthCampDetailScreen() {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
-        <Text style={styles.errorTitle}>Camp Not Found</Text>
+        <Text style={styles.errorTitle}>{t('campNotFound')}</Text>
         <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
-          <Text style={styles.errorButtonText}>Go Back</Text>
+          <Text style={styles.errorButtonText}>{t('goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -146,7 +176,7 @@ export default function HealthCampDetailScreen() {
             <View style={styles.headerBottomContent}>
               <View style={styles.badgeRow}>
                 <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryBadgeText}>{program.category || 'Health Camp'}</Text>
+                  <Text style={styles.categoryBadgeText}>{program.category || t('healthCamps')}</Text>
                 </View>
                 {program.subcategory && (
                   <View style={[styles.categoryBadge, styles.subCategoryBadge]}>
@@ -166,13 +196,13 @@ export default function HealthCampDetailScreen() {
             {program.registrations_count > 0 && (
               <View style={styles.statBadge}>
                 <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.statText}>{program.registrations_count} Registered</Text>
+                <Text style={styles.statText}>{program.registrations_count} {t('registered')}</Text>
               </View>
             )}
             {program.seats_available !== undefined && program.seats_available !== null && (
               <View style={[styles.statBadge, styles.seatsBadge]}>
                 <Ionicons name="people" size={16} color="#F59E0B" />
-                <Text style={styles.seatsText}>{program.seats_available} Seats Left</Text>
+                <Text style={styles.seatsText}>{program.seats_available} {t('seatsLeft')}</Text>
               </View>
             )}
           </View>
@@ -184,7 +214,7 @@ export default function HealthCampDetailScreen() {
                 <Ionicons name="calendar-outline" size={22} color="#4F46E5" />
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Date</Text>
+                <Text style={styles.infoLabel}>{t('date')}</Text>
                 <Text style={styles.infoValue}>{new Date(program.date || Date.now()).toLocaleDateString()}</Text>
               </View>
             </View>
@@ -194,9 +224,9 @@ export default function HealthCampDetailScreen() {
                 <Ionicons name="location-outline" size={22} color="#EF4444" />
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Location</Text>
+                <Text style={styles.infoLabel}>{t('location')}</Text>
                 <Text style={styles.infoValue} numberOfLines={2}>{program.location}</Text>
-                {program.ward && <Text style={styles.infoSubValue}>Ward: {program.ward}</Text>}
+                {program.ward && <Text style={styles.infoSubValue}>{t('ward')}: {program.ward}</Text>}
               </View>
             </View>
 
@@ -206,7 +236,7 @@ export default function HealthCampDetailScreen() {
                   <Ionicons name="call-outline" size={22} color="#10B981" />
                 </View>
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Contact Organizer</Text>
+                  <Text style={styles.infoLabel}>{t('contactOrganizer')}</Text>
                   <Text style={styles.infoValue}>{program.contact_info}</Text>
                 </View>
               </View>
@@ -227,9 +257,9 @@ export default function HealthCampDetailScreen() {
           <View style={styles.divider} />
 
           {/* About Section */}
-          <Text style={styles.sectionTitle}>About This Camp</Text>
+          <Text style={styles.sectionTitle}>{t('aboutThisCamp')}</Text>
           <Text style={styles.descriptionText}>
-            {program.description || 'No description provided for this health camp.'}
+            {program.description || '...'}
           </Text>
 
           <View style={{ height: 100 }} />
@@ -256,12 +286,12 @@ export default function HealthCampDetailScreen() {
             ) : registered ? (
               <View style={styles.buttonRow}>
                 <Ionicons name="checkmark-circle" size={20} color="#fff" style={styles.buttonIcon} />
-                <Text style={styles.registerButtonText}>Registered Successfully</Text>
+                <Text style={styles.registerButtonText}>{t('registeredSuccessfully')}</Text>
               </View>
             ) : program.seats_available === 0 ? (
-              <Text style={styles.registerButtonText}>Camp Full</Text>
+              <Text style={styles.registerButtonText}>{t('campFull')}</Text>
             ) : (
-              <Text style={styles.registerButtonText}>Register Now</Text>
+              <Text style={styles.registerButtonText}>{t('registerNow')}</Text>
             )}
           </TouchableOpacity>
         </SafeAreaView>

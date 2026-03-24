@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Doctors ─────────────────────────────────────────────────────────────
 const DOCTORS = [
@@ -192,6 +193,7 @@ function VideoCallScreen({ doctor, onEnd }: { doctor: typeof DOCTORS[0]; onEnd: 
 // ─── Main Teleconsultation Component ─────────────────────────────────────────
 export default function TeleconsultationScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
 
   // Step: 'list' | 'mode' | 'schedule' | 'videocall'
   const [step, setStep] = useState<'list' | 'mode' | 'schedule' | 'videocall'>('list');
@@ -242,15 +244,15 @@ export default function TeleconsultationScreen() {
               <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.confirmIconBg}>
                 <Ionicons name="call" size={36} color="#fff" />
               </LinearGradient>
-              <Text style={styles.confirmTitle}>Call Ended</Text>
-              <Text style={styles.confirmSubtitle}>Your teleconsultation session has ended.</Text>
+              <Text style={styles.confirmTitle}>{t('callEnded')}</Text>
+              <Text style={styles.confirmSubtitle}>{t('teleconsultationEnded')}</Text>
               <View style={styles.confirmDetails}>
-                <ConfirmRow icon="person-outline" label="Doctor" value={selectedDoctor!.name} />
-                <ConfirmRow icon="medical-outline" label="Specialization" value={selectedDoctor!.specialization} />
-                <ConfirmRow icon="time-outline" label="Type" value="Instant Consultation" />
+                <ConfirmRow icon="person-outline" label={t('doctor')} value={selectedDoctor!.name} />
+                <ConfirmRow icon="medical-outline" label={t('specialization')} value={selectedDoctor!.specialization} />
+                <ConfirmRow icon="time-outline" label={t('type')} value={t('instantConsultation')} />
               </View>
               <TouchableOpacity style={styles.confirmDoneBtn} onPress={handleCallEndedDone}>
-                <Text style={styles.confirmDoneText}>Done</Text>
+                <Text style={styles.confirmDoneText}>{t('close')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -269,8 +271,8 @@ export default function TeleconsultationScreen() {
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Ionicons name="videocam" size={42} color="#fff" />
-            <Text style={styles.headerTitle}>Teleconsultation</Text>
-            <Text style={styles.headerSubtitle}>Consult a doctor from anywhere</Text>
+            <Text style={styles.headerTitle}>{t('teleconsultation')}</Text>
+            <Text style={styles.headerSubtitle}>{t('consultDoctorAnywhere')}</Text>
           </View>
         </LinearGradient>
 
@@ -292,7 +294,7 @@ export default function TeleconsultationScreen() {
                   <View style={[styles.onlineBadge, !doctor.online && styles.offlineBadge]}>
                     <View style={[styles.onlineDot, !doctor.online && styles.offlineDot]} />
                     <Text style={[styles.onlineText, !doctor.online && styles.offlineText]}>
-                      {doctor.online ? 'Online' : 'Offline'}
+                      {doctor.online ? t('online') : t('offline')}
                     </Text>
                   </View>
                 </View>
@@ -326,7 +328,7 @@ export default function TeleconsultationScreen() {
           <TouchableOpacity onPress={() => setStep('list')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.bookingHeaderTitle}>Choose Consultation Type</Text>
+          <Text style={styles.bookingHeaderTitle}>{t('chooseConsultationType')}</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
 
@@ -344,7 +346,7 @@ export default function TeleconsultationScreen() {
             </View>
           </View>
 
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>How would you like to consult?</Text>
+          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>{t('howWouldYouLikeToConsult')}</Text>
 
           {/* Instant */}
           <TouchableOpacity style={styles.modeCard} onPress={handleInstant} activeOpacity={0.85}>
@@ -352,8 +354,8 @@ export default function TeleconsultationScreen() {
               <Ionicons name="flash" size={28} color="#fff" />
             </LinearGradient>
             <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>Instant Consultation</Text>
-              <Text style={styles.modeDesc}>Connect with the doctor right now via video call</Text>
+              <Text style={styles.modeTitle}>{t('instantConsultation')}</Text>
+              <Text style={styles.modeDesc}>{t('connectDoctorVideoCall')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
           </TouchableOpacity>
@@ -364,8 +366,8 @@ export default function TeleconsultationScreen() {
               <Ionicons name="calendar" size={28} color="#fff" />
             </LinearGradient>
             <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>Scheduled Consultation</Text>
-              <Text style={styles.modeDesc}>Pick a date and time for an online video consultation</Text>
+              <Text style={styles.modeTitle}>{t('scheduledConsultation')}</Text>
+              <Text style={styles.modeDesc}>{t('pickDateTimeVideoConsultation')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
           </TouchableOpacity>
@@ -383,7 +385,7 @@ export default function TeleconsultationScreen() {
         <TouchableOpacity onPress={() => setStep('mode')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Select Date & Time</Text>
+        <Text style={styles.bookingHeaderTitle}>{t('selectDateTime')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -400,7 +402,7 @@ export default function TeleconsultationScreen() {
 
         {/* Date Picker */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Date</Text>
+          <Text style={styles.sectionTitle}>{t('selectDate')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
             {DATES.map((d) => (
               <TouchableOpacity
@@ -418,7 +420,7 @@ export default function TeleconsultationScreen() {
 
         {/* Time Slots */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Time Slot</Text>
+          <Text style={styles.sectionTitle}>{t('selectTimeSlot')}</Text>
           <View style={styles.slotsGrid}>
             {TIME_SLOTS.map((slot) => (
               <TouchableOpacity
@@ -450,7 +452,7 @@ export default function TeleconsultationScreen() {
           >
             <Ionicons name="videocam-outline" size={20} color="#fff" />
             <Text style={styles.bookBtnText}>
-              {selectedSlot ? `Schedule for ${selectedSlot}` : 'Select a Time Slot'}
+              {selectedSlot ? `${t('bookAppointmentEx')} ${selectedSlot}` : t('selectATimeSlot')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -463,12 +465,12 @@ export default function TeleconsultationScreen() {
             <LinearGradient colors={['#10B981', '#059669']} style={styles.confirmIconBg}>
               <Ionicons name="checkmark" size={40} color="#fff" />
             </LinearGradient>
-            <Text style={styles.confirmTitle}>Appointment Scheduled!</Text>
-            <Text style={styles.confirmSubtitle}>Your online consultation has been booked.</Text>
+            <Text style={styles.confirmTitle}>{t('appointmentScheduled')}</Text>
+            <Text style={styles.confirmSubtitle}>{t('onlineConsultationBooked')}</Text>
             <View style={styles.confirmDetails}>
-              <ConfirmRow icon="person-outline" label="Doctor" value={selectedDoctor!.name} />
-              <ConfirmRow icon="medical-outline" label="Specialization" value={selectedDoctor!.specialization} />
-              <ConfirmRow icon="videocam-outline" label="Type" value="Online Consultation" />
+              <ConfirmRow icon="person-outline" label={t('doctor')} value={selectedDoctor!.name} />
+              <ConfirmRow icon="medical-outline" label={t('specialization')} value={selectedDoctor!.specialization} />
+              <ConfirmRow icon="videocam-outline" label={t('type')} value={t('onlineConsultation')} />
               <ConfirmRow
                 icon="calendar-outline"
                 label="Date"

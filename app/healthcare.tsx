@@ -12,58 +12,69 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { programsAPI } from '../utils/api';
+import { healthCampsAPI } from '../utils/api';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function HealthcareScreen() {
   const router = useRouter();
-  const [programs, setPrograms] = useState([]);
+  const { t } = useLanguageStore();
+  const mockPrograms = [
+    {
+      id: 'hc1',
+      title: 'Free Mega Health Camp',
+      location: 'Community Hall, Ward 1',
+      date: '10th Nov 2024',
+      seats_available: 50,
+      is_active: true
+    },
+    {
+      id: 'hc2',
+      title: 'Eye Checkup Drive',
+      location: 'City Hospital, Ward 3',
+      date: '15th Nov 2024',
+      seats_available: 100,
+      is_active: true
+    }
+  ];
+
+  const [programs, setPrograms] = useState<any[]>(mockPrograms);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadPrograms = async () => {
-    try {
-      const data = await programsAPI.getAll('Healthcare');
-      setPrograms(data);
-    } catch (error) {
-      console.error('Error loading healthcare programs:', error);
-    }
-  };
-
   useEffect(() => {
-    loadPrograms();
+    setPrograms(mockPrograms);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPrograms();
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   const services = [
     {
       id: 'doctor',
-      title: 'Book Appointment',
-      description: 'Schedule appointments with doctors',
+      title: t('bookAppointmentEx'),
+      description: t('scheduleAppointments'),
       icon: 'medical',
       color: '#EF4444',
     },
     {
       id: 'camp',
-      title: 'Health Camps',
-      description: 'Free health checkups and camps',
+      title: t('healthCamps'),
+      description: t('freeHealthCheckups'),
       icon: 'fitness',
       color: '#F59E0B',
     },
     {
       id: 'telehealth',
-      title: 'Teleconsultation',
-      description: 'Online doctor consultations',
+      title: t('teleconsultation'),
+      description: t('onlineConsultations'),
       icon: 'videocam',
       color: '#10B981',
     },
     {
       id: 'advice',
-      title: 'Health Summary',
-      description: 'AI-powered health summary',
+      title: t('healthSummary'),
+      description: t('aiHealthSummary'),
       icon: 'heart',
       color: '#8B5CF6',
     },
@@ -77,8 +88,8 @@ export default function HealthcareScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="medical" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>Smart Healthcare</Text>
-          <Text style={styles.headerSubtitle}>Access quality healthcare services</Text>
+          <Text style={styles.headerTitle}>{t('smartHealthcare')}</Text>
+          <Text style={styles.headerSubtitle}>{t('accessHealthcare')}</Text>
         </View>
       </LinearGradient>
 
@@ -91,7 +102,7 @@ export default function HealthcareScreen() {
       >
         {/* Services Grid */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Healthcare Services</Text>
+          <Text style={styles.sectionTitle}>{t('healthcareServices')}</Text>
           <View style={styles.servicesGrid}>
             {services.map((service) => (
               <TouchableOpacity
@@ -107,7 +118,7 @@ export default function HealthcareScreen() {
                   } else if (service.id === 'advice') {
                     router.push('/health-summary');
                   } else {
-                    Alert.alert(service.title, 'This feature will be available soon!');
+                    Alert.alert(service.title, t('featureAvailableSoon'));
                   }
                 }}
               >
@@ -124,9 +135,9 @@ export default function HealthcareScreen() {
         {/* Health Camps */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Health Camps</Text>
+            <Text style={styles.sectionTitle}>{t('upcomingHealthCamps')}</Text>
             <TouchableOpacity onPress={() => router.push('/health-camps')}>
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -157,7 +168,7 @@ export default function HealthcareScreen() {
                     {program.seats_available && (
                       <View style={styles.seatsContainer}>
                         <Ionicons name="people" size={14} color="#10B981" />
-                        <Text style={styles.seatsText}>{program.seats_available} seats</Text>
+                        <Text style={styles.seatsText}>{program.seats_available} {t('seats')}</Text>
                       </View>
                     )}
                   </View>
@@ -166,14 +177,14 @@ export default function HealthcareScreen() {
                   style={styles.registerButton}
                   onPress={() => router.push(`/health-camps/${program.id}`)}
                 >
-                  <Text style={styles.registerButtonText}>View Details</Text>
+                  <Text style={styles.registerButtonText}>{t('viewDetails')}</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>No upcoming camps</Text>
+              <Text style={styles.emptyText}>{t('noUpcomingCamps')}</Text>
             </View>
           )}
         </View>

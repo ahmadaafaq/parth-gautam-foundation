@@ -13,9 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 export default function HealthSummaryScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleRegenerate = () => {
@@ -67,8 +69,8 @@ export default function HealthSummaryScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="heart" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>Health Summary</Text>
-          <Text style={styles.headerSubtitle}>AI-powered health analysis & insights</Text>
+          <Text style={styles.headerTitle}>{t('healthSummary')}</Text>
+          <Text style={styles.headerSubtitle}>{t('aiHealthAnalysis')}</Text>
         </View>
       </LinearGradient>
 
@@ -79,7 +81,7 @@ export default function HealthSummaryScreen() {
           {isGenerating && (
             <View style={[styles.card, styles.loadingCard]}>
               <ActivityIndicator size="small" color="#EF4444" />
-              <Text style={styles.loadingText}>Processing your report with AI...</Text>
+              <Text style={styles.loadingText}>{t('processingReportAI')}</Text>
             </View>
           )}
 
@@ -90,7 +92,7 @@ export default function HealthSummaryScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.scoreCard}
           >
-            <Text style={styles.scoreLabel}>Overall Health Score</Text>
+            <Text style={styles.scoreLabel}>{t('overallHealthScore')}</Text>
             <Text style={styles.scoreValue}>78/100</Text>
             <Text style={styles.scoreStatus}>Good — Maintain current health habits</Text>
           </LinearGradient>
@@ -99,7 +101,7 @@ export default function HealthSummaryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="bar-chart" size={20} color="#EF4444" />
-              <Text style={styles.sectionTitle}>Key Findings</Text>
+              <Text style={styles.sectionTitle}>{t('keyFindings')}</Text>
             </View>
             {keyFindings.map((item, idx) => (
               <View key={idx} style={styles.card}>
@@ -113,7 +115,7 @@ export default function HealthSummaryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="alert-circle" size={20} color="#F97316" />
-              <Text style={styles.sectionTitle}>Potential Deficiencies</Text>
+              <Text style={styles.sectionTitle}>{t('potentialDeficiencies')}</Text>
             </View>
             {deficiencies.map((item, idx) => (
               <View key={idx} style={[styles.card, styles.warningCard]}>
@@ -127,7 +129,7 @@ export default function HealthSummaryScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="leaf" size={20} color="#16A34A" />
-              <Text style={styles.sectionTitle}>Lifestyle & Diet</Text>
+              <Text style={styles.sectionTitle}>{t('lifestyleAndDiet')}</Text>
             </View>
             {lifestyle.map((tip, idx) => (
               <View key={idx} style={styles.card}>
@@ -138,7 +140,7 @@ export default function HealthSummaryScreen() {
 
           {/* Recommended Tests */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recommended Monthly Tests</Text>
+            <Text style={styles.sectionTitle}>{t('recommendedMonthlyTests')}</Text>
             <View style={styles.testsGrid}>
               {tests.map((test, idx) => (
                 <View key={idx} style={styles.testChip}>
@@ -160,7 +162,7 @@ export default function HealthSummaryScreen() {
                 style={styles.primaryButtonGradient}
               >
                 <Ionicons name="refresh" size={18} color="#fff" />
-                <Text style={styles.primaryButtonText}>Regenerate Report</Text>
+                <Text style={styles.primaryButtonText}>{t('regenerateReport')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -169,12 +171,12 @@ export default function HealthSummaryScreen() {
               onPress={() => Alert.alert('Download', 'PDF download coming soon!')}
             >
               <Ionicons name="download-outline" size={18} color="#EF4444" />
-              <Text style={styles.secondaryButtonText}>Download Report</Text>
+              <Text style={styles.secondaryButtonText}>{t('downloadReport')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={handleShare}>
               <Ionicons name="share-social-outline" size={18} color="#EF4444" />
-              <Text style={styles.secondaryButtonText}>Share Report</Text>
+              <Text style={styles.secondaryButtonText}>{t('shareReport')}</Text>
             </TouchableOpacity>
           </View>
 

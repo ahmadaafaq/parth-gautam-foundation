@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────────
 const COURSES = [
@@ -193,6 +194,7 @@ function VideoPlayer({
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function SkillTrainingScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const [selectedCourse, setSelectedCourse] = useState<typeof COURSES[0] | null>(null);
   const [playingLesson, setPlayingLesson] = useState<typeof COURSES[0]['lessons'][0] | null>(null);
 
@@ -240,7 +242,7 @@ export default function SkillTrainingScreen() {
           {/* Lessons */}
           <View style={styles.lessonsSection}>
             <Text style={styles.lessonsSectionTitle}>
-              {selectedCourse.lessons.length} Lessons
+              {selectedCourse.lessons.length} {t('lessons')}
             </Text>
             {selectedCourse.lessons.map((lesson, idx) => (
               <TouchableOpacity
@@ -275,8 +277,8 @@ export default function SkillTrainingScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="construct" size={44} color="#fff" />
-          <Text style={styles.headerTitle}>Skill Training</Text>
-          <Text style={styles.headerSubtitle}>Free courses to boost your career</Text>
+          <Text style={styles.headerTitle}>{t('skillTraining')}</Text>
+          <Text style={styles.headerSubtitle}>{t('freeCoursesBoostCareer')}</Text>
         </View>
       </LinearGradient>
 
@@ -315,7 +317,7 @@ export default function SkillTrainingScreen() {
                 </View>
                 <View style={styles.footerItem}>
                   <Ionicons name="list-outline" size={12} color="rgba(255,255,255,0.8)" />
-                  <Text style={styles.footerText}>{item.lessons.length} lessons</Text>
+                  <Text style={styles.footerText}>{item.lessons.length} {t('lessons').toLowerCase()}</Text>
                 </View>
               </View>
             </View>

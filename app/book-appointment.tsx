@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const DOCTORS = [
@@ -109,6 +110,7 @@ const DATES = getNextDays(7);
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function BookAppointmentScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
 
   // Step: 'list' | 'book'
   const [step, setStep] = useState<'list' | 'book'>('list');
@@ -144,9 +146,9 @@ export default function BookAppointmentScreen() {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Ionicons name="calendar" size={42} color="#fff" />
-            <Text style={styles.headerTitle}>Book Appointment</Text>
-            <Text style={styles.headerSubtitle}>Choose a doctor & schedule your visit</Text>
+            <Ionicons name="medical" size={48} color="#fff" />
+            <Text style={styles.headerTitle}>{t('bookAppointmentEx')}</Text>
+            <Text style={styles.headerSubtitle}>{t('chooseDoctorSchedule')}</Text>
           </View>
         </LinearGradient>
 
@@ -167,7 +169,7 @@ export default function BookAppointmentScreen() {
                   <Text style={styles.doctorName}>{doctor.name}</Text>
                   {!doctor.available && (
                     <View style={styles.unavailableBadge}>
-                      <Text style={styles.unavailableText}>Unavailable</Text>
+                      <Text style={styles.unavailableText}>{t('unavailable')}</Text>
                     </View>
                   )}
                 </View>
@@ -176,13 +178,16 @@ export default function BookAppointmentScreen() {
                   <Ionicons name="location-outline" size={12} color="#6B7280" />
                   <Text style={styles.hospitalText} numberOfLines={1}>{doctor.hospital}</Text>
                 </View>
+
                 <View style={styles.doctorMeta}>
                   <View style={styles.metaItem}>
                     <Ionicons name="star" size={13} color="#F59E0B" />
                     <Text style={styles.metaText}>{doctor.rating}</Text>
                   </View>
-                  <View style={styles.metaDot} />
-                  <Text style={styles.metaText}>{doctor.experience}</Text>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="briefcase-outline" size={13} color="#6B7280" />
+                    <Text style={styles.metaText}>{doctor.experience}</Text>
+                  </View>
                 </View>
               </View>
               {doctor.available && (
@@ -205,7 +210,7 @@ export default function BookAppointmentScreen() {
         <TouchableOpacity onPress={() => setStep('list')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Select Date & Time</Text>
+        <Text style={styles.bookingHeaderTitle}>{t('selectDateTime')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -225,7 +230,7 @@ export default function BookAppointmentScreen() {
 
         {/* Date Picker */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Date</Text>
+          <Text style={styles.sectionTitle}>{t('selectDate')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
             {DATES.map((d) => (
               <TouchableOpacity
@@ -243,7 +248,7 @@ export default function BookAppointmentScreen() {
 
         {/* Time Slots */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Time Slot</Text>
+          <Text style={styles.sectionTitle}>{t('selectTimeSlot')}</Text>
           <View style={styles.slotsGrid}>
             {TIME_SLOTS.map((slot) => (
               <TouchableOpacity
@@ -275,7 +280,7 @@ export default function BookAppointmentScreen() {
           >
             <Ionicons name="calendar-outline" size={20} color="#fff" />
             <Text style={styles.bookBtnText}>
-              {selectedSlot ? `Book for ${selectedSlot}` : 'Select a Time Slot'}
+              {selectedSlot ? `${t('bookAppointmentEx')} ${selectedSlot}` : t('selectATimeSlot')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -288,24 +293,23 @@ export default function BookAppointmentScreen() {
             <LinearGradient colors={['#22C55E', '#16A34A']} style={styles.confirmIconBg}>
               <Ionicons name="checkmark" size={40} color="#fff" />
             </LinearGradient>
-            <Text style={styles.confirmTitle}>Appointment Booked!</Text>
-            <Text style={styles.confirmSubtitle}>Your appointment has been confirmed.</Text>
+            <Text style={styles.confirmTitle}>{t('appointmentBooked')}</Text>
+            <Text style={styles.confirmSubtitle}>{t('appointmentConfirmed')}</Text>
 
             <View style={styles.confirmDetails}>
-              <ConfirmRow icon="person-outline" label="Doctor" value={selectedDoctor!.name} />
-              <ConfirmRow icon="medical-outline" label="Specialization" value={selectedDoctor!.specialization} />
-              <ConfirmRow icon="location-outline" label="Hospital" value={selectedDoctor!.hospital} />
+              <ConfirmRow icon="person-outline" label={t('doctor')} value={selectedDoctor!.name} />
+              <ConfirmRow icon="medical-outline" label={t('specialization')} value={selectedDoctor!.specialization} />
+              <ConfirmRow icon="business-outline" label={t('hospital')} value={selectedDoctor!.hospital} />
               <ConfirmRow
                 icon="calendar-outline"
-                label="Date"
+                label={t('date')}
                 value={`${selectedDateObj?.day}, ${selectedDateObj?.date} ${selectedDateObj?.month}`}
               />
-              <ConfirmRow icon="time-outline" label="Time" value={selectedSlot!} />
-
+              <ConfirmRow icon="time-outline" label={t('time')} value={selectedSlot!} />
             </View>
 
             <TouchableOpacity style={styles.confirmDoneBtn} onPress={handleConfirmDone}>
-              <Text style={styles.confirmDoneText}>Done</Text>
+              <Text style={styles.confirmDoneText}>{t('close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -20,8 +20,20 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { t } = useLanguageStore();
-  const [suggestions, setSuggestions] = useState([]);
-  const [updates, setUpdates] = useState([]);
+  const mockSuggestions = [
+    { id: 's1', title: 'Free Medical Checkup', location: 'Ward 1 Health Center', date: 'Tomorrow, 10 AM', category: 'healthcare' },
+    { id: 's2', title: 'IT Skills Training', location: 'Community Center', date: 'Next Monday', category: 'education' },
+  ];
+
+  const mockUpdates = [
+    { id: 'u1', title: 'New Scholarship Program Announced', location: 'All Wards', date: 'Today', category: 'education' },
+    { id: 'u2', title: 'Mega Health Camp', location: 'Govt School, Ward 4', date: '15th Oct', category: 'healthcare' },
+    { id: 'u3', title: 'Job Fair 2024', location: 'City Square', date: '20th Oct', category: 'jobs' },
+    { id: 'u4', title: 'Women Empowerment Drive', location: 'Community Hall', date: '25th Oct', category: 'community' },
+  ];
+
+  const [suggestions, setSuggestions] = useState<any[]>(mockSuggestions);
+  const [updates, setUpdates] = useState<any[]>(mockUpdates);
   const [refreshing, setRefreshing] = useState(false);
 
   const getGreeting = () => {
@@ -31,33 +43,13 @@ export default function HomeScreen() {
     return t('goodEvening');
   };
 
-  const loadData = async () => {
-    if (!user) return;
-
-    try {
-      const [suggestionsData, programsData] = await Promise.all([
-        suggestionsAPI.getForUser(user.id),
-        programsAPI.getAll(),
-      ]);
-      setSuggestions(suggestionsData);
-      setUpdates(programsData.slice(0, 4)); // Show latest 6 programs as updates
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  };
-
   useEffect(() => {
-    loadData();
-
-    // Set up polling for "realtime" updates - every 10 seconds
-    const interval = setInterval(loadData, 10000);
-    return () => clearInterval(interval);
+    // Mock data does not need loading logic or interval
   }, [user]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   const quickActions = [
@@ -80,7 +72,7 @@ export default function HomeScreen() {
       title: t('reportIssue'),
       icon: 'alert-circle',
       color: '#8B5CF6',
-      onPress: () => router.push('/community'),
+      onPress: () => router.push('/report-issue' as any),
     },
     {
       id: 'course',
@@ -88,6 +80,20 @@ export default function HomeScreen() {
       icon: 'briefcase',
       color: '#10B981',
       onPress: () => router.push('/jobs' as any),
+    },
+    {
+      id: 'voter',
+      title: (t as any)('smartVoter') || 'Smart Voter',
+      icon: 'checkbox',
+      color: '#3B82F6',
+      onPress: () => router.push('/voter' as any),
+    },
+    {
+      id: 'call',
+      title: (t as any)('weeklyCall') || 'Weekly Call',
+      icon: 'call',
+      color: '#10B981',
+      onPress: () => router.push('/weekly-call' as any),
     },
   ];
 
@@ -208,7 +214,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('communityUpdates')}</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/programs')}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)')}>
               <Text style={styles.viewAllText}>{t('viewAll')}</Text>
             </TouchableOpacity>
           </View>
@@ -219,7 +225,7 @@ export default function HomeScreen() {
                 key={program.id}
                 style={styles.updateCard}
                 onPress={() => router.push({
-                  pathname: '/(tabs)/programs',
+                  pathname: '/(tabs)',
                   params: { highlighted: program.id }
                 } as any)}
               >

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────────
 const CONSULTANTS = [
@@ -116,6 +117,7 @@ type Step = 'list' | 'mode' | 'schedule';
 
 export default function CareerGuidanceScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const [step, setStep] = useState<Step>('list');
   const [selected, setSelected] = useState<typeof CONSULTANTS[0] | null>(null);
   const [mode, setMode] = useState<'online' | 'inperson' | null>(null);
@@ -158,8 +160,8 @@ export default function CareerGuidanceScreen() {
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Ionicons name="briefcase" size={44} color="#fff" />
-            <Text style={styles.headerTitle}>Career Guidance</Text>
-            <Text style={styles.headerSubtitle}>Book a session with an expert consultant</Text>
+            <Text style={styles.headerTitle}>{t('careerGuidance')}</Text>
+            <Text style={styles.headerSubtitle}>{t('bookConsultantSession')}</Text>
           </View>
         </LinearGradient>
 
@@ -170,7 +172,7 @@ export default function CareerGuidanceScreen() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <View>
-              <Text style={styles.sectionTitleList}>Our Expert Consultants</Text>
+              <Text style={styles.sectionTitleList}>{t('ourExpertConsultants')}</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -186,7 +188,7 @@ export default function CareerGuidanceScreen() {
                   <View style={[styles.onlineBadge, !item.online && styles.offlineBadge]}>
                     <View style={[styles.dot, !item.online && styles.offDot]} />
                     <Text style={[styles.onlineText, !item.online && styles.offlineText]}>
-                      {item.online ? 'Online' : 'Offline'}
+                      {item.online ? t('online') : t('offline')}
                     </Text>
                   </View>
                 </View>
@@ -201,13 +203,13 @@ export default function CareerGuidanceScreen() {
                   {item.online && (
                     <View style={styles.modeChip}>
                       <Ionicons name="videocam-outline" size={11} color="#3B82F6" />
-                      <Text style={styles.modeChipText}>Online</Text>
+                      <Text style={styles.modeChipText}>{t('online')}</Text>
                     </View>
                   )}
                   {item.inPerson && (
                     <View style={[styles.modeChip, { backgroundColor: '#F0FDF4' }]}>
                       <Ionicons name="location-outline" size={11} color="#10B981" />
-                      <Text style={[styles.modeChipText, { color: '#10B981' }]}>In-Person</Text>
+                      <Text style={[styles.modeChipText, { color: '#10B981' }]}>{t('inPerson')}</Text>
                     </View>
                   )}
                 </View>
@@ -228,7 +230,7 @@ export default function CareerGuidanceScreen() {
           <TouchableOpacity onPress={() => setStep('list')} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.bookingHeaderTitle}>Choose Session Type</Text>
+          <Text style={styles.bookingHeaderTitle}>{t('chooseSessionType')}</Text>
           <View style={{ width: 40 }} />
         </LinearGradient>
 
@@ -246,7 +248,7 @@ export default function CareerGuidanceScreen() {
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>How would you like to connect?</Text>
+          <Text style={styles.sectionTitle}>{t('howWouldYouLikeToConnect')}</Text>
 
           {selected!.online && (
             <TouchableOpacity style={styles.modeCard} onPress={() => handleSelectMode('online')} activeOpacity={0.85}>
@@ -254,8 +256,8 @@ export default function CareerGuidanceScreen() {
                 <Ionicons name="videocam" size={28} color="#fff" />
               </LinearGradient>
               <View style={styles.modeInfo}>
-                <Text style={styles.modeTitle}>Online Consultation</Text>
-                <Text style={styles.modeDesc}>Video call session from the comfort of your home</Text>
+                <Text style={styles.modeTitle}>{t('onlineConsultation')}</Text>
+                <Text style={styles.modeDesc}>{t('videoCallSessionDesc')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
             </TouchableOpacity>
@@ -267,8 +269,8 @@ export default function CareerGuidanceScreen() {
                 <Ionicons name="location" size={28} color="#fff" />
               </LinearGradient>
               <View style={styles.modeInfo}>
-                <Text style={styles.modeTitle}>In-Person Session</Text>
-                <Text style={styles.modeDesc}>Meet face-to-face at the foundation's career centre</Text>
+                <Text style={styles.modeTitle}>{t('inPersonSession')}</Text>
+                <Text style={styles.modeDesc}>{t('meetFaceToFaceDesc')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
             </TouchableOpacity>
@@ -285,7 +287,7 @@ export default function CareerGuidanceScreen() {
         <TouchableOpacity onPress={() => setStep('mode')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Select Date & Time</Text>
+        <Text style={styles.bookingHeaderTitle}>{t('selectDateAndTime')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -299,7 +301,7 @@ export default function CareerGuidanceScreen() {
             <View style={[styles.sessionTypeBadge, mode === 'online' ? { backgroundColor: '#EFF6FF' } : { backgroundColor: '#F0FDF4' }]}>
               <Ionicons name={mode === 'online' ? 'videocam-outline' : 'location-outline'} size={12} color={mode === 'online' ? '#3B82F6' : '#10B981'} />
               <Text style={[styles.sessionTypeText, { color: mode === 'online' ? '#3B82F6' : '#10B981' }]}>
-                {mode === 'online' ? 'Online Session' : 'In-Person Session'}
+                {mode === 'online' ? t('onlineSession') || 'Online Session' : t('inPersonSession')}
               </Text>
             </View>
           </View>
@@ -307,7 +309,7 @@ export default function CareerGuidanceScreen() {
 
         {/* Date Picker */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Date</Text>
+          <Text style={styles.sectionTitle}>{t('selectDate')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
             {DATES.map((d) => (
               <TouchableOpacity
@@ -325,7 +327,7 @@ export default function CareerGuidanceScreen() {
 
         {/* Time Slots */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Time Slot</Text>
+          <Text style={styles.sectionTitle}>{t('selectTimeSlot')}</Text>
           <View style={styles.slotsGrid}>
             {TIME_SLOTS.map((slot) => (
               <TouchableOpacity
@@ -355,7 +357,7 @@ export default function CareerGuidanceScreen() {
           >
             <Ionicons name={mode === 'online' ? 'videocam-outline' : 'location-outline'} size={20} color="#fff" />
             <Text style={styles.bookBtnText}>
-              {selectedSlot ? `Book for ${selectedSlot}` : 'Select a Time Slot'}
+              {selectedSlot ? `${t('bookFor')} ${selectedSlot}` : t('selectATimeSlot')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -473,7 +475,7 @@ export default function CareerGuidanceScreen() {
             <View style={[styles.sessionTypeBadge, mode === 'online' ? { backgroundColor: '#EFF6FF' } : { backgroundColor: '#F0FDF4' }]}>
               <Ionicons name={mode === 'online' ? 'videocam-outline' : 'location-outline'} size={12} color={mode === 'online' ? '#3B82F6' : '#10B981'} />
               <Text style={[styles.sessionTypeText, { color: mode === 'online' ? '#3B82F6' : '#10B981' }]}>
-                {mode === 'online' ? 'Online Session' : 'In-Person Session'}
+                {mode === 'online' ? t('onlineSession') : t('inPersonSession')}
               </Text>
             </View>
           </View>

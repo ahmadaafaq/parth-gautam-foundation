@@ -14,7 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { programsAPI } from '../../utils/api';
+import { healthCampsAPI } from '../../utils/api';
+import { useLanguageStore } from '../../store/languageStore';
 
 export interface HealthCamp {
   id: string;
@@ -32,43 +33,69 @@ export interface HealthCamp {
   registrations_count: number;
   tags: string[];
   contact_info: string;
-  // Map coordinates (Bareilly, UP)
   latitude: number;
   longitude: number;
 }
 
-interface Program extends HealthCamp { }
-
 export default function HealthCampsScreen() {
   const router = useRouter();
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useLanguageStore();
+  const mockHealthCamps: HealthCamp[] = [
+    {
+      id: 'hc1',
+      title: 'Free Mega Health Camp',
+      description: 'Comprehensive health checkup including blood tests, eye exam, and general physician consultation.',
+      category: 'General',
+      subcategory: 'Checkup',
+      location: 'Community Hall, Ward 1',
+      ward: 'Ward 1',
+      date: new Date(Date.now() + 86400000 * 2).toISOString(),
+      seats_available: 50,
+      image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
+      created_at: new Date().toISOString(),
+      is_active: true,
+      registrations_count: 120,
+      tags: ['Free', 'Checkup'],
+      contact_info: '9876543210',
+      latitude: 0,
+      longitude: 0,
+    },
+    {
+      id: 'hc2',
+      title: 'Eye Checkup Drive',
+      description: 'Free eye checkup and distribution of spectacles.',
+      category: 'Specialized',
+      subcategory: 'Eye',
+      location: 'City Hospital',
+      ward: 'Ward 3',
+      date: new Date(Date.now() + 86400000 * 5).toISOString(),
+      seats_available: 100,
+      image: 'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&w=800&q=80',
+      created_at: new Date().toISOString(),
+      is_active: true,
+      registrations_count: 45,
+      tags: ['Eye', 'Free'],
+      contact_info: '9876543211',
+      latitude: 0,
+      longitude: 0,
+    }
+  ];
+
+  const [programs, setPrograms] = useState<HealthCamp[]>(mockHealthCamps);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const loadPrograms = async () => {
-    try {
-      const data = await programsAPI.getAll();
-      const apiPrograms = data.filter((p: Program) => p.is_active);
-      setPrograms(apiPrograms);
-    } catch (error) {
-      console.error('Error loading programs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadPrograms();
+    setPrograms(mockHealthCamps);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPrograms();
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   // Derive unique categories from active programs
@@ -94,8 +121,8 @@ export default function HealthCampsScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Health Camps</Text>
-          <Text style={styles.headerSubtitle}>Discover free health checkups & events near you</Text>
+          <Text style={styles.headerTitle}>{t('healthCamps')}</Text>
+          <Text style={styles.headerSubtitle}>{t('discoverHealthCamps')}</Text>
         </View>
 
         {/* Search Bar */}
@@ -103,7 +130,7 @@ export default function HealthCampsScreen() {
           <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by title or location..."
+            placeholder={t('searchHealthCamps')}
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -127,7 +154,7 @@ export default function HealthCampsScreen() {
                 styles.categoryText,
                 selectedCategory === cat && styles.categoryTextSelected
               ]}>
-                {cat}
+                {cat === 'All' ? t('all') : cat}
               </Text>
             </TouchableOpacity>
           ))}
@@ -143,7 +170,7 @@ export default function HealthCampsScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#10B981" />
-            <Text style={styles.loadingText}>Finding health camps...</Text>
+            <Text style={styles.loadingText}>{t('findingHealthCamps')}</Text>
           </View>
         ) : filteredPrograms.length > 0 ? (
           filteredPrograms.map((program) => (
@@ -158,7 +185,7 @@ export default function HealthCampsScreen() {
                 style={styles.cardCover}
               />
               <View style={styles.cardBadge}>
-                <Text style={styles.cardBadgeText}>{program.category || 'Event'}</Text>
+                <Text style={styles.cardBadgeText}>{program.category || t('eventLabel')}</Text>
               </View>
 
               <View style={styles.cardContent}>
@@ -178,7 +205,7 @@ export default function HealthCampsScreen() {
                   {program.seats_available !== undefined && program.seats_available !== null && (
                     <View style={styles.seatsBadge}>
                       <Ionicons name="people-outline" size={14} color="#F59E0B" />
-                      <Text style={styles.seatsText}>{program.seats_available} left</Text>
+                      <Text style={styles.seatsText}>{program.seats_available} {t('seatsLeft')}</Text>
                     </View>
                   )}
                 </View>
@@ -188,8 +215,8 @@ export default function HealthCampsScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="calendar-clear-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>No Health Camps Found</Text>
-            <Text style={styles.emptySubtitle}>Try adjusting your search or filters.</Text>
+            <Text style={styles.emptyTitle}>{t('noHealthCampsFound')}</Text>
+            <Text style={styles.emptySubtitle}>{t('adjustSearchFilters')}</Text>
           </View>
         )}
       </ScrollView>

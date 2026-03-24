@@ -59,12 +59,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="programs"
+        name="community"
         options={{
           headerShown: false,
-          title: t('programs'),
+          title: t('community'),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid" size={size} color={color} />
+            <Ionicons name="people" size={size} color={color} />
           ),
         }}
       />

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguageStore } from '../store/languageStore';
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 const SCHOLARSHIPS = [
@@ -99,6 +100,7 @@ const SCHOLARSHIPS = [
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function ScholarshipsScreen() {
   const router = useRouter();
+  const { t } = useLanguageStore();
   const [selected, setSelected] = useState<typeof SCHOLARSHIPS[0] | null>(null);
 
   // ── Detail View ──
@@ -123,7 +125,7 @@ export default function ScholarshipsScreen() {
             </View>
             <View style={styles.lastDateBadge}>
               <Ionicons name="time-outline" size={14} color="#EF4444" />
-              <Text style={styles.lastDateText}>Last date: {selected.lastDate}</Text>
+              <Text style={styles.lastDateText}>{t('lastDate')}: {selected.lastDate}</Text>
             </View>
           </View>
 
@@ -131,25 +133,25 @@ export default function ScholarshipsScreen() {
           <View style={styles.amountCard}>
             <Ionicons name="cash-outline" size={22} color="#10B981" />
             <View>
-              <Text style={styles.amountLabel}>Award Amount</Text>
+              <Text style={styles.amountLabel}>{t('awardAmount')}</Text>
               <Text style={styles.amountValue}>{selected.amount}</Text>
             </View>
           </View>
 
           {/* Organization */}
-          <InfoBlock icon="business-outline" label="Offered By" value={selected.organization} />
+          <InfoBlock icon="business-outline" label={t('offeredBy')} value={selected.organization} />
 
           {/* Description */}
-          <InfoBlock icon="document-text-outline" label="About This Scholarship" value={selected.description} />
+          <InfoBlock icon="document-text-outline" label={t('aboutThisScholarship')} value={selected.description} />
 
           {/* Eligibility */}
-          <InfoBlock icon="person-circle-outline" label="Who Can Apply" value={selected.eligibility} />
+          <InfoBlock icon="person-circle-outline" label={t('whoCanApply')} value={selected.eligibility} />
 
           {/* Benefits */}
           <View style={styles.infoBlock}>
             <View style={styles.infoHeader}>
               <Ionicons name="gift-outline" size={18} color="#8B5CF6" />
-              <Text style={styles.infoLabel}>Benefits</Text>
+              <Text style={styles.infoLabel}>{t('benefits')}</Text>
             </View>
             {selected.benefits.map((b, i) => (
               <View key={i} style={styles.bulletRow}>
@@ -166,7 +168,7 @@ export default function ScholarshipsScreen() {
           >
             <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.applyBtnGradient}>
               <Ionicons name="open-outline" size={18} color="#fff" />
-              <Text style={styles.applyBtnText}>Apply on Official Website</Text>
+              <Text style={styles.applyBtnText}>{t('applyOnOfficialWebsite')}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -187,7 +189,7 @@ export default function ScholarshipsScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Ionicons name="school" size={44} color="#fff" />
-          <Text style={styles.headerTitle}>Scholarships</Text>
+          <Text style={styles.headerTitle}>{t('scholarships')}</Text>
           {/* <Text style={styles.headerSubtitle}>Apply for financial aid programs</Text> */}
         </View>
       </LinearGradient>
