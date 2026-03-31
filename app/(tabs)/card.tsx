@@ -17,7 +17,7 @@ import { useLanguageStore } from '../../store/languageStore';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
-import { userAPI } from '../../utils/api';
+import { userAPI, hospitalAPI } from '../../utils/api';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@clerk/clerk-expo';
 
@@ -29,11 +29,14 @@ export default function CitizenCardScreen() {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [opdAppointments, setOpdAppointments] = useState<any[]>([]);
+  const [loadingOpd, setLoadingOpd] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
       if (user) {
         loadData();
+        loadOpdAppointments();
       }
     }, [user?.id])
   );
@@ -41,8 +44,6 @@ export default function CitizenCardScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // const freshUser = await userAPI.getById(user!.id);
-
       const mockHistory = [
         {
           id: 'a1',
@@ -63,13 +64,24 @@ export default function CitizenCardScreen() {
           status: 'Registered'
         }
       ];
-
-      // setUser(freshUser);
       setActivities(mockHistory);
     } catch (error) {
       console.error('Error loading card data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOpdAppointments = async () => {
+    if (!user?.citizen_id) return;
+    try {
+      setLoadingOpd(true);
+      const data = await hospitalAPI.getMyAppointments(user.citizen_id);
+      setOpdAppointments(data);
+    } catch (err) {
+      console.warn('Could not load OPD appointments:', err);
+    } finally {
+      setLoadingOpd(false);
     }
   };
 
@@ -287,6 +299,65 @@ export default function CitizenCardScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* ── My OPD Appointments ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My OPD Appointments</Text>
+            {loadingOpd && <ActivityIndicator size="small" color="#EF4444" />}
+          </View>
+
+          {opdAppointments.length > 0 ? (
+            opdAppointments.map((appt) => {
+              const statusColor = appt.status === 'Cancelled' ? '#EF4444'
+                : appt.status === 'Completed' ? '#10B981'
+                : '#3B82F6';
+              const statusBg = appt.status === 'Cancelled' ? '#FEF2F2'
+                : appt.status === 'Completed' ? '#F0FDF4'
+                : '#EFF6FF';
+              return (
+                <View key={appt.id} style={styles.opdCard}>
+                  <View style={styles.opdCardHeader}>
+                    <View style={styles.opdIconBox}>
+                      <Ionicons name="medical" size={20} color="#EF4444" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.opdDoctorName}>{appt.doctor || 'Doctor'}</Text>
+                      <Text style={styles.opdSpecialty}>{appt.specialty || 'General'}</Text>
+                    </View>
+                    <View style={[styles.opdStatusBadge, { backgroundColor: statusBg }]}>
+                      <Text style={[styles.opdStatusText, { color: statusColor }]}>
+                        {appt.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.opdCardFooter}>
+                    <View style={styles.opdInfoChip}>
+                      <Ionicons name="calendar-outline" size={12} color="#3B82F6" />
+                      <Text style={styles.opdInfoChipText}>{appt.date}</Text>
+                    </View>
+                    <View style={styles.opdInfoChip}>
+                      <Ionicons name="time-outline" size={12} color="#3B82F6" />
+                      <Text style={styles.opdInfoChipText}>{appt.time}</Text>
+                    </View>
+                    {appt.id && (
+                      <View style={styles.opdInfoChip}>
+                        <Ionicons name="barcode-outline" size={12} color="#6B7280" />
+                        <Text style={[styles.opdInfoChipText, { color: '#6B7280' }]}>{appt.id}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })
+          ) : !loadingOpd ? (
+            <View style={styles.opdEmptyState}>
+              <Ionicons name="calendar-outline" size={40} color="#D1D5DB" />
+              <Text style={styles.opdEmptyText}>No appointments booked yet</Text>
+              <Text style={styles.opdEmptySubtext}>Book an OPD appointment from the Healthcare section</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* My Issues Section */}
@@ -838,5 +909,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 16,
+  },
+
+  // OPD Appointments
+  opdCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+  },
+  opdCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  opdIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  opdDoctorName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  opdSpecialty: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  opdStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  opdStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  opdCardFooter: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  opdInfoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  opdInfoChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  opdEmptyState: {
+    alignItems: 'center',
+    padding: 28,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  opdEmptyText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  opdEmptySubtext: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });

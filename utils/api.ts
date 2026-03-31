@@ -205,3 +205,100 @@ export const seedAPI = {
     return res.data;
   },
 };
+
+// ─── Hospital (Doctor Appointment System) API ────────────────────────────────
+// Base URL for the doctor-appointment-management Next.js app.
+// In development: http://localhost:3000  (change port if needed)
+// In production:  set EXPO_PUBLIC_HOSPITAL_BASE_URL in your environment
+const HOSPITAL_BASE_URL =
+  process.env.EXPO_PUBLIC_HOSPITAL_BASE_URL ||
+  ((() => {
+    const host = typeof Constants !== 'undefined'
+      ? Constants.expoConfig?.hostUri?.split(':').shift()
+      : null;
+    return host ? `http://${host}:3000` : 'http://localhost:3000';
+  })());
+
+const OPD_API_KEY = 'pgf-opd-key-2026';
+
+const hospitalAxios = axios.create({
+  baseURL: HOSPITAL_BASE_URL,
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+export const hospitalAPI = {
+  /**
+   * Fetch all available doctors from the hospital DB.
+   * Maps to GET /api/doctors on the doctor-appointment-management app.
+   */
+  getDoctors: async (): Promise<any[]> => {
+    const res = await hospitalAxios.get('/api/doctors');
+    return res.data;
+  },
+
+  /**
+   * Upload a document (image or PDF) for an appointment.
+   */
+  uploadDocument: async (file: { uri: string; name: string; type: string }, patientId: string): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name,
+      type: file.type,
+    } as any);
+    formData.append('patientId', patientId);
+    formData.append('bucket', 'uploads');
+
+    const res = await hospitalAxios.post('/api/opd-online/upload', formData, {
+      headers: { 
+        'x-api-key': OPD_API_KEY,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  /**
+   * Book an OPD appointment online.
+   * Maps to POST /api/opd-online on the doctor-appointment-management app.
+   *
+   * @param data - booking details
+   */
+  bookOpdOnline: async (data: {
+    patientName: string;
+    citizenId?: string;
+    phone?: string;
+    doctorId?: string;
+    doctorName?: string;
+    specialty?: string;
+    date: string;   // YYYY-MM-DD
+    time: string;   // e.g. "10:00 AM"
+    notes?: string;
+    age?: string;
+    gender?: string;
+    address?: string;
+    medicalReports?: string[];
+    prescriptions?: string[];
+    imaging?: string[];
+  }): Promise<{ success: boolean; message: string; appointment: any }> => {
+    const res = await hospitalAxios.post('/api/opd-online', data, {
+      headers: { 'x-api-key': OPD_API_KEY },
+    });
+    return res.data;
+  },
+
+  /**
+   * Fetch all OPD appointments booked by a citizen.
+   * Maps to GET /api/opd-online?citizenId=... on the doctor-appointment-management app.
+   *
+   * @param citizenId - the user's citizen_id from PGF auth store
+   */
+  getMyAppointments: async (citizenId: string): Promise<any[]> => {
+    const res = await hospitalAxios.get('/api/opd-online', {
+      params: { citizenId },
+    });
+    return res.data.appointments || [];
+  },
+};
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,84 +8,26 @@ import {
   Modal,
   Image,
   FlatList,
+  ActivityIndicator,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
+import { useAuthStore } from '../store/authStore';
+import { hospitalAPI } from '../utils/api';
+import * as DocumentPicker from 'expo-document-picker';
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const DOCTORS = [
-  {
-    id: '1',
-    name: 'Dr. Anjali Sharma',
-    specialization: 'General Physician',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '12 years',
-    rating: 4.8,
-    avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=200&h=200&auto=format&fit=crop',
-    available: true,
-  },
-  {
-    id: '2',
-    name: 'Dr. Rakesh Gupta',
-    specialization: 'Cardiologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '18 years',
-    rating: 4.9,
-    avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop',
-    available: true,
-  },
-  {
-    id: '3',
-    name: 'Dr. Priya Verma',
-    specialization: 'Paediatrician',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '9 years',
-    rating: 4.7,
-    avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-    available: true,
-  },
-  {
-    id: '4',
-    name: 'Dr. Suresh Agarwal',
-    specialization: 'Orthopaedic Surgeon',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '22 years',
-    rating: 4.9,
-    avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=200&h=200&auto=format&fit=crop',
-    available: false,
-  },
-  {
-    id: '5',
-    name: 'Dr. Meena Tiwari',
-    specialization: 'Gynaecologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '15 years',
-    rating: 4.8,
-    avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200&h=200&auto=format&fit=crop',
-    available: true,
-  },
-  {
-    id: '6',
-    name: 'Dr. Amit Saxena',
-    specialization: 'Dermatologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '10 years',
-    rating: 4.6,
-    avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop',
-    available: true,
-  },
-];
-
+// ─── Constants ────────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
   '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
   '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
 ];
 
-// Generate next 7 days
 function getNextDays(count: number) {
   const days = [];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -107,29 +49,192 @@ function getNextDays(count: number) {
 
 const DATES = getNextDays(7);
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Doctor type ─────────────────────────────────────────────────────────────
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  hospital: string;
+  experience?: string;
+  rating?: number;
+  avatar?: string;
+  available: boolean;
+  specialty_id?: string;
+  specialties?: { name: string };
+}
+
+function mapApiDoctor(d: any): Doctor {
+  return {
+    id: d.id,
+    name: d.name,
+    specialization: d.specialties?.name || d.specialty || 'General Physician',
+    hospital: d.hospital || 'Mission Hospital, Civil Lines, Bareilly',
+    experience: d.experience || '',
+    rating: d.rating || 4.8,
+    avatar: d.avatar || d.photo_url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=EF4444&color=fff&size=128`,
+    available: d.is_active !== false,
+    specialty_id: d.specialty_id,
+    specialties: d.specialties,
+  };
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function BookAppointmentScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
+  const { user } = useAuthStore();
 
-  // Step: 'list' | 'book'
+  // ── State ──
   const [step, setStep] = useState<'list' | 'book'>('list');
-  const [selectedDoctor, setSelectedDoctor] = useState<typeof DOCTORS[0] | null>(null);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorError, setDoctorError] = useState<string | null>(null);
+
+  // ── Helper to map age_group to numeric age ──
+  const getInitialAge = (group?: string) => {
+    if (!group) return '25';
+    // Handle both hyphen types
+    const normalizedGroup = group.replace('–', '-');
+    if (normalizedGroup.includes('18')) return '21';
+    if (normalizedGroup.includes('25')) return '30';
+    if (normalizedGroup.includes('35')) return '40';
+    if (normalizedGroup.includes('45')) return '52';
+    if (normalizedGroup.includes('60')) return '65';
+    return '25';
+  };
+
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedDate, setSelectedDate] = useState(DATES[0].key);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSelectDoctor = (doctor: typeof DOCTORS[0]) => {
+  // These stay in state to be sent to the API, but hidden from UI
+  const [patientName, setPatientName] = useState(user?.name || '');
+  const [patientPhone, setPatientPhone] = useState(user?.phone || '');
+  const [patientAge, setPatientAge] = useState(getInitialAge(user?.age_group));
+  const [patientGender, setPatientGender] = useState((user as any)?.gender?.toLowerCase() || 'Others');
+  const [notes, setNotes] = useState('');
+
+  const [booking, setBooking] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [bookedAppointment, setBookedAppointment] = useState<any>(null);
+
+  // ── Document Upload State ──
+  const [uploading, setUploading] = useState(false);
+  const [docTab, setDocTab] = useState<'medical' | 'prescription' | 'imaging'>('medical');
+  const [medicalDocs, setMedicalDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+  const [prescriptionDocs, setPrescriptionDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+  const [imagingDocs, setImagingDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        multiple: true,
+      });
+
+      if (!result.canceled) {
+        if (docTab === 'medical') setMedicalDocs([...medicalDocs, ...result.assets]);
+        else if (docTab === 'prescription') setPrescriptionDocs([...prescriptionDocs, ...result.assets]);
+        else if (docTab === 'imaging') setImagingDocs([...imagingDocs, ...result.assets]);
+      }
+    } catch (err) {
+      console.error('Pick error:', err);
+    }
+  };
+
+  const removeDoc = (category: string, index: number) => {
+    if (category === 'medical') setMedicalDocs(medicalDocs.filter((_, i) => i !== index));
+    else if (category === 'prescription') setPrescriptionDocs(prescriptionDocs.filter((_, i) => i !== index));
+    else if (category === 'imaging') setImagingDocs(imagingDocs.filter((_, i) => i !== index));
+  };
+
+  // ── Load doctors on mount ──
+  useEffect(() => {
+    loadDoctors();
+  }, []);
+
+  const loadDoctors = async () => {
+    try {
+      setLoadingDoctors(true);
+      setDoctorError(null);
+      const data = await hospitalAPI.getDoctors();
+      setDoctors(data.map(mapApiDoctor));
+    } catch (err: any) {
+      console.error('Failed to load doctors:', err);
+      setDoctorError('Could not load doctors. Please try again.');
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const handleSelectDoctor = (doctor: Doctor) => {
     if (!doctor.available) return;
     setSelectedDoctor(doctor);
     setSelectedDate(DATES[0].key);
     setSelectedSlot(null);
+    setPatientName(user?.name || '');
+    setPatientPhone(user?.phone || '');
+    setNotes('');
     setStep('book');
   };
 
-  const handleBookAppointment = () => {
-    if (!selectedSlot) return;
-    setShowConfirm(true);
+  const handleBookAppointment = async () => {
+    if (!selectedSlot || !selectedDoctor) return;
+    if (!patientName.trim()) {
+      Alert.alert('Required', 'Please enter your name.');
+      return;
+    }
+
+    setBooking(true);
+    try {
+      // 1. Upload Documents
+      const uploadCategory = async (docs: DocumentPicker.DocumentPickerAsset[]) => {
+        const urls: string[] = [];
+        for (const doc of docs) {
+          const res = await hospitalAPI.uploadDocument({
+            uri: doc.uri,
+            name: doc.name,
+            type: doc.mimeType || 'application/octet-stream',
+          }, user?.citizen_id || user?.id || 'guest');
+          urls.push(res.url);
+        }
+        return urls;
+      };
+
+      const [mUrls, pUrls, iUrls] = await Promise.all([
+        uploadCategory(medicalDocs),
+        uploadCategory(prescriptionDocs),
+        uploadCategory(imagingDocs),
+      ]);
+
+      const result = await hospitalAPI.bookOpdOnline({
+        patientName: patientName.trim(),
+        citizenId: user?.citizen_id,
+        phone: patientPhone.trim() || user?.phone,
+        age: patientAge,
+        gender: patientGender,
+        address: (user as any)?.address || (user?.ward ? `Ward: ${user.ward}` : 'PGF Area'),
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        specialty: selectedDoctor.specialization,
+        date: selectedDate,
+        time: selectedSlot,
+        notes: notes.trim() || undefined,
+        medicalReports: mUrls,
+        prescriptions: pUrls,
+        imaging: iUrls,
+        citizenId: user?.citizen_id || 'unknown', // Pass citizenId for upload path consistency
+      });
+
+      setBookedAppointment(result.appointment);
+      setShowConfirm(true);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Failed to book appointment. Please try again.';
+      Alert.alert('Booking Failed', msg);
+    } finally {
+      setBooking(false);
+    }
   };
 
   const handleConfirmDone = () => {
@@ -137,7 +242,7 @@ export default function BookAppointmentScreen() {
     router.back();
   };
 
-  // ── Doctor List ──
+  // ── Doctor List Screen ──
   if (step === 'list') {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -152,55 +257,83 @@ export default function BookAppointmentScreen() {
           </View>
         </LinearGradient>
 
-        <FlatList
-          data={DOCTORS}
-          keyExtractor={(d) => d.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item: doctor }) => (
-            <TouchableOpacity
-              style={[styles.doctorCard, !doctor.available && styles.doctorCardDisabled]}
-              onPress={() => handleSelectDoctor(doctor)}
-              activeOpacity={0.85}
-            >
-              <Image source={{ uri: doctor.avatar }} style={styles.avatar} />
-              <View style={styles.doctorInfo}>
-                <View style={styles.doctorNameRow}>
-                  <Text style={styles.doctorName}>{doctor.name}</Text>
-                  {!doctor.available && (
-                    <View style={styles.unavailableBadge}>
-                      <Text style={styles.unavailableText}>{t('unavailable')}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.specialization}>{doctor.specialization}</Text>
-                <View style={styles.hospitalRow}>
-                  <Ionicons name="location-outline" size={12} color="#6B7280" />
-                  <Text style={styles.hospitalText} numberOfLines={1}>{doctor.hospital}</Text>
-                </View>
-
-                <View style={styles.doctorMeta}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="star" size={13} color="#F59E0B" />
-                    <Text style={styles.metaText}>{doctor.rating}</Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="briefcase-outline" size={13} color="#6B7280" />
-                    <Text style={styles.metaText}>{doctor.experience}</Text>
-                  </View>
-                </View>
-              </View>
-              {doctor.available && (
-                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
-              )}
+        {loadingDoctors ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color="#EF4444" />
+            <Text style={styles.centerText}>Loading doctors...</Text>
+          </View>
+        ) : doctorError ? (
+          <View style={styles.centerState}>
+            <Ionicons name="wifi-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.centerText}>{doctorError}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={loadDoctors}>
+              <Text style={styles.retryBtnText}>{t('tryAgain')}</Text>
             </TouchableOpacity>
-          )}
-        />
+          </View>
+        ) : doctors.length === 0 ? (
+          <View style={styles.centerState}>
+            <Ionicons name="person-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.centerText}>No doctors available at the moment.</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={loadDoctors}>
+              <Text style={styles.retryBtnText}>{t('tryAgain')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={doctors}
+            keyExtractor={(d) => d.id}
+            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: doctor }) => (
+              <TouchableOpacity
+                style={[styles.doctorCard, !doctor.available && styles.doctorCardDisabled]}
+                onPress={() => handleSelectDoctor(doctor)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: doctor.avatar }}
+                  style={styles.avatar}
+                  defaultSource={{ uri: `https://ui-avatars.com/api/?name=Doctor&background=EF4444&color=fff` }}
+                />
+                <View style={styles.doctorInfo}>
+                  <View style={styles.doctorNameRow}>
+                    <Text style={styles.doctorName}>{doctor.name}</Text>
+                    {!doctor.available && (
+                      <View style={styles.unavailableBadge}>
+                        <Text style={styles.unavailableText}>{t('unavailable')}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.specialization}>{doctor.specialization}</Text>
+                  <View style={styles.hospitalRow}>
+                    <Ionicons name="location-outline" size={12} color="#6B7280" />
+                    <Text style={styles.hospitalText} numberOfLines={1}>{doctor.hospital}</Text>
+                  </View>
+                  <View style={styles.doctorMeta}>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="star" size={13} color="#F59E0B" />
+                      <Text style={styles.metaText}>{doctor.rating?.toFixed(1) || '4.8'}</Text>
+                    </View>
+                    {!!doctor.experience && (
+                      <View style={styles.metaItem}>
+                        <Ionicons name="briefcase-outline" size={13} color="#6B7280" />
+                        <Text style={styles.metaText}>{doctor.experience}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                {doctor.available && (
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        )}
       </SafeAreaView>
     );
   }
 
-  // ── Booking Form ──
+  // ── Booking Form Screen ──
   const selectedDateObj = DATES.find(d => d.key === selectedDate);
 
   return (
@@ -215,10 +348,10 @@ export default function BookAppointmentScreen() {
       </LinearGradient>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Selected Doctor */}
+        {/* Selected Doctor Card */}
         <View style={styles.selectedDoctorCard}>
           <Image source={{ uri: selectedDoctor!.avatar }} style={styles.selectedAvatar} />
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.selectedDoctorName}>{selectedDoctor!.name}</Text>
             <Text style={styles.selectedSpec}>{selectedDoctor!.specialization}</Text>
             <View style={styles.hospitalRow}>
@@ -227,6 +360,30 @@ export default function BookAppointmentScreen() {
             </View>
           </View>
         </View>
+
+        {/* Patient Info Summary */}
+        <View style={styles.section}>
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="document-text-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+                placeholder="Describe your symptoms / notes..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+              />
+            </View>
+          </View>
+          {user?.citizen_id && (
+            <View style={styles.citizenBadge}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#10B981" />
+              <Text style={styles.citizenBadgeText}>Citizen ID: {user.citizen_id}</Text>
+            </View>
+          )}
+        </View>
+
 
         {/* Date Picker */}
         <View style={styles.section}>
@@ -262,25 +419,80 @@ export default function BookAppointmentScreen() {
           </View>
         </View>
 
+        {/* Document Upload Tabs */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('uploadDocuments')}</Text>
+          <Text style={styles.docSubtitle}>{t('viewableByDoctorNote')}</Text>
+          
+          <View style={styles.docTabs}>
+            <TouchableOpacity 
+              style={[styles.docTab, docTab === 'medical' && styles.docTabActive]} 
+              onPress={() => setDocTab('medical')}
+            >
+              <Text style={[styles.docTabText, docTab === 'medical' && styles.docTabTextActive]}>{t('medicalReport')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.docTab, docTab === 'prescription' && styles.docTabActive]} 
+              onPress={() => setDocTab('prescription')}
+            >
+              <Text style={[styles.docTabText, docTab === 'prescription' && styles.docTabTextActive]}>{t('prescription')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.docTab, docTab === 'imaging' && styles.docTabActive]} 
+              onPress={() => setDocTab('imaging')}
+            >
+              <Text style={[styles.docTabText, docTab === 'imaging' && styles.docTabTextActive]}>{t('imaging')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.docTabContent}>
+            {/* Show selected files for active tab */}
+            {(docTab === 'medical' ? medicalDocs : docTab === 'prescription' ? prescriptionDocs : imagingDocs).map((doc, idx) => (
+              <View key={idx} style={styles.fileRow}>
+                <View style={styles.fileInfo}>
+                  <Ionicons name={doc.mimeType?.includes('pdf') ? 'document-text' : 'image'} size={20} color="#6B7280" />
+                  <Text style={styles.fileName} numberOfLines={1}>{doc.name}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeDoc(docTab, idx)}>
+                  <Ionicons name="close-circle" size={20} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <TouchableOpacity style={styles.addDocBtn} onPress={handlePickDocument}>
+              <Ionicons name="add-circle-outline" size={24} color="#EF4444" />
+              <Text style={styles.addDocBtnText}>{t('addDocument')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.maxFilesHint}>{t('maxFilesNote')}</Text>
+          </View>
+        </View>
 
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Book Button */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={[styles.bookBtn, !selectedSlot && styles.bookBtnDisabled]}
+          style={[styles.bookBtn, (!selectedSlot || booking) && styles.bookBtnDisabled]}
           onPress={handleBookAppointment}
-          disabled={!selectedSlot}
+          disabled={!selectedSlot || booking}
         >
           <LinearGradient
-            colors={selectedSlot ? ['#EF4444', '#DC2626'] : ['#D1D5DB', '#D1D5DB']}
+            colors={selectedSlot && !booking ? ['#EF4444', '#DC2626'] : ['#D1D5DB', '#D1D5DB']}
             style={styles.bookBtnGradient}
           >
-            <Ionicons name="calendar-outline" size={20} color="#fff" />
+            {booking ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Ionicons name="calendar-outline" size={20} color="#fff" />
+            )}
             <Text style={styles.bookBtnText}>
-              {selectedSlot ? `${t('bookAppointmentEx')} ${selectedSlot}` : t('selectATimeSlot')}
+              {booking
+                ? 'Booking...'
+                : selectedSlot
+                  ? `${t('bookAppointmentEx')} · ${selectedSlot}`
+                  : t('selectATimeSlot')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -306,6 +518,9 @@ export default function BookAppointmentScreen() {
                 value={`${selectedDateObj?.day}, ${selectedDateObj?.date} ${selectedDateObj?.month}`}
               />
               <ConfirmRow icon="time-outline" label={t('time')} value={selectedSlot!} />
+              {bookedAppointment?.id && (
+                <ConfirmRow icon="barcode-outline" label="Appointment ID" value={bookedAppointment.id} />
+              )}
             </View>
 
             <TouchableOpacity style={styles.confirmDoneBtn} onPress={handleConfirmDone}>
@@ -333,6 +548,19 @@ function ConfirmRow({ icon, label, value }: { icon: any; label: string; value: s
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
+
+  // Center states (loading / error / empty)
+  centerState: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32,
+  },
+  centerText: {
+    fontSize: 14, color: '#6B7280', textAlign: 'center', marginTop: 12,
+  },
+  retryBtn: {
+    marginTop: 20, backgroundColor: '#EF4444', paddingHorizontal: 32,
+    paddingVertical: 12, borderRadius: 12,
+  },
+  retryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
   // Header (list screen)
   header: { paddingBottom: 28, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
@@ -373,7 +601,6 @@ const styles = StyleSheet.create({
   doctorMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   metaText: { fontSize: 12, color: '#6B7280' },
-  metaDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB' },
 
   // Booking form
   selectedDoctorCard: {
@@ -388,6 +615,24 @@ const styles = StyleSheet.create({
 
   section: { paddingHorizontal: 16, marginBottom: 4 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
+
+  // Patient info
+  inputGroup: { gap: 10, marginBottom: 10 },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+  },
+  inputIcon: { marginRight: 8 },
+  textInput: {
+    flex: 1, paddingVertical: 12, fontSize: 14, color: '#1F2937',
+  },
+  citizenBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#F0FDF4', padding: 10, borderRadius: 10,
+    borderWidth: 1, borderColor: '#BBF7D0',
+  },
+  citizenBadgeText: { fontSize: 12, color: '#059669', fontWeight: '600' },
 
   // Date picker
   dateRow: { gap: 10, paddingBottom: 4 },
@@ -413,21 +658,6 @@ const styles = StyleSheet.create({
   slotChipActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
   slotText: { fontSize: 13, color: '#374151', fontWeight: '600' },
   slotTextActive: { color: '#fff' },
-
-  // Fee summary
-  feeSummary: {
-    margin: 16, backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
-  },
-  feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  feeLabel: { fontSize: 14, color: '#6B7280' },
-  feeValue: { fontSize: 14, color: '#1F2937', fontWeight: '600' },
-  feeTotalRow: {
-    borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 10, marginBottom: 0,
-  },
-  feeTotalLabel: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  feeTotalValue: { fontSize: 16, fontWeight: '800', color: '#EF4444' },
 
   // Bottom bar
   bottomBar: {
@@ -478,4 +708,58 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444', paddingVertical: 14, paddingHorizontal: 48, borderRadius: 14,
   },
   confirmDoneText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  // Document Upload Styles
+  docSubtitle: { fontSize: 12, color: '#6B7280', marginBottom: 12, marginTop: -8 },
+  docTabs: { 
+    flexDirection: 'row', 
+    backgroundColor: '#F3F4F6', 
+    borderRadius: 12, 
+    padding: 4, 
+    marginBottom: 12 
+  },
+  docTab: { 
+    flex: 1, 
+    paddingVertical: 8, 
+    alignItems: 'center', 
+    borderRadius: 8 
+  },
+  docTabActive: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  docTabText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  docTabTextActive: { color: '#EF4444' },
+  docTabContent: { 
+    backgroundColor: '#fff', 
+    borderRadius: 12, 
+    padding: 12, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB',
+    minHeight: 100
+  },
+  fileRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    backgroundColor: '#F9FAFB', 
+    padding: 10, 
+    borderRadius: 10, 
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#F3F4F6'
+  },
+  fileInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  fileName: { fontSize: 13, color: '#374151', flex: 1 },
+  addDocBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 8, 
+    paddingVertical: 12, 
+    borderWidth: 2, 
+    borderColor: '#FEE2E2', 
+    borderStyle: 'dashed', 
+    borderRadius: 12,
+    marginTop: 8
+  },
+  addDocBtnText: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
+  maxFilesHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 8 },
 });

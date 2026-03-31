@@ -523,6 +523,18 @@ export const translations = {
     pgSurveyQ4_opt1: 'हाँ, बिल्कुल',
     pgSurveyQ4_opt2: 'नहीं, अभी नहीं',
     finishSurvey: 'सर्वेक्षण समाप्त करें',
+    
+    // Document Upload
+    uploadDocuments: 'दस्तावेज अपलोड करें',
+    medicalReport: 'मेडिकल रिपोर्ट',
+    prescription: 'नुस्खा (Prescription)',
+    imaging: 'इमेजिंग (X-Ray/MRI)',
+    addDocument: 'दस्तावेज जोड़ें',
+    filesSelected: '{count} फाइलें चुनी गईं',
+    maxFilesNote: 'आप प्रत्येक श्रेणी में कई फाइलें अपलोड कर सकते हैं',
+    viewableByDoctorNote: 'ये दस्तावेज केवल आपके डॉक्टर को दिखाई देंगे',
+    uploadingDocs: 'दस्तावेज अपलोड हो रहे हैं...',
+    removeFile: 'हटाएं',
   },
   en: {
     // Welcome Screen
@@ -1048,6 +1060,18 @@ export const translations = {
     pgSurveyQ4_opt1: 'Yes, absolutely',
     pgSurveyQ4_opt2: 'No, not now',
     finishSurvey: 'Finish Survey',
+    
+    // Document Upload
+    uploadDocuments: 'Upload Documents',
+    medicalReport: 'Medical Report',
+    prescription: 'Prescription',
+    imaging: 'Imaging (X-Ray/MRI)',
+    addDocument: 'Add Document',
+    filesSelected: '{count} files selected',
+    maxFilesNote: 'You can upload multiple files in each category',
+    viewableByDoctorNote: 'These documents will only be visible to your doctor',
+    uploadingDocs: 'Uploading documents...',
+    removeFile: 'Remove',
   },
 };
 
