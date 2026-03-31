@@ -7,12 +7,17 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
+  Alert,
+  TextInput,
+  ImageBackground,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
+import healthcareBanner from '../assets/images/parth-side.png';
 
 // ─── Mock Job Data ──────────────────────────────────────────────────────────────
 const JOBS = [
@@ -188,7 +193,7 @@ const JOB_SERVICES = [
     descriptionKey: 'mockQuestionsAndTips',
     icon: 'people',
     color: '#3B82F6',
-    route: '/interview-prep',
+    url: 'https://ai-recruiter-six-pied.vercel.app/',
   },
   {
     id: 'resume',
@@ -210,7 +215,7 @@ function JobDetailModal({
   onClose: () => void;
 }) {
   const { t } = useLanguageStore();
-  
+
   return (
     <Modal visible animationType="slide" transparent>
       <View style={md.overlay}>
@@ -343,6 +348,38 @@ export default function JobsScreen() {
   const { t } = useLanguageStore();
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedJob, setSelectedJob] = useState<typeof JOBS[0] | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addFormStep, setAddFormStep] = useState(1);
+  const [addFormData, setAddFormData] = useState({
+    companyName: '',
+    location: '',
+    gstNumber: '',
+    title: '',
+    vacancies: '',
+    description: '',
+    salary: '',
+    jobType: 'Full-time',
+    requirements: '',
+    howToApply: '',
+  });
+
+  const handleAddSubmit = () => {
+    Alert.alert(t('success'), 'Job requirement added successfully (Mock)');
+    setShowAddModal(false);
+    setAddFormStep(1);
+    setAddFormData({
+      companyName: '',
+      location: '',
+      gstNumber: '',
+      title: '',
+      vacancies: '',
+      description: '',
+      salary: '',
+      jobType: 'Full-time',
+      requirements: '',
+      howToApply: '',
+    });
+  };
 
   const getFilterType = (key: string) => {
     switch (key) {
@@ -357,16 +394,25 @@ export default function JobsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient colors={['#10B981', '#059669']} style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Ionicons name="briefcase" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>{t('jobsAndCareers')}</Text>
-          <Text style={styles.headerSubtitle}>{t('discoverOpportunities')}</Text>
-        </View>
-      </LinearGradient>
+      <ImageBackground
+        source={healthcareBanner}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <LinearGradient
+          colors={['rgba(16, 185, 129, 0.3)', 'rgba(5, 150, 105, 0.5)']}
+          style={styles.headerOverlay}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Ionicons name="briefcase" size={48} color="#fff" />
+            <Text style={styles.headerTitle}>{t('jobsAndCareers')}</Text>
+            <Text style={styles.headerSubtitle}>{t('discoverOpportunities')}</Text>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
@@ -374,11 +420,30 @@ export default function JobsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('toolsAndResources')}</Text>
           <View style={styles.servicesGrid}>
-            {JOB_SERVICES.map((service) => (
+            {[
+              {
+                id: 'addJob',
+                titleKey: 'addJobRequirement',
+                descriptionKey: 'addJobRequirementDesc',
+                icon: 'add-circle',
+                color: '#10B981',
+                onPress: () => setShowAddModal(true),
+              },
+              ...JOB_SERVICES.map(s => ({
+                ...s,
+                onPress: () => {
+                  if ('url' in s && s.url) {
+                    Linking.openURL(s.url);
+                  } else if ('route' in s && s.route) {
+                    router.push(s.route as any);
+                  }
+                }
+              }))
+            ].map((service) => (
               <TouchableOpacity
                 key={service.id}
                 style={styles.serviceCard}
-                onPress={() => router.push(service.route as any)}
+                onPress={service.onPress}
                 activeOpacity={0.85}
               >
                 <View style={[styles.serviceIcon, { backgroundColor: service.color + '20' }]}>
@@ -449,6 +514,121 @@ export default function JobsScreen() {
       {selectedJob && (
         <JobDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />
       )}
+
+      {/* Add Requirement Modal */}
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={md.overlay}>
+          <View style={[md.sheet, { height: '80%' }]}>
+            <View style={[md.header, { backgroundColor: '#10B981' }]}>
+              <TouchableOpacity onPress={() => setShowAddModal(false)} style={md.closeBtn}>
+                <Ionicons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+              <Text style={[md.jobTitle, { marginTop: 10 }]}>{t('addJobRequirement')}</Text>
+              <Text style={md.company}>Step {addFormStep} of 2</Text>
+            </View>
+
+            <ScrollView contentContainerStyle={md.content}>
+              {addFormStep === 1 ? (
+                <View style={styles.formContainer}>
+                  <Text style={styles.formLabel}>{t('companyInfo')}</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('companyName')}
+                    value={addFormData.companyName}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, companyName: val }))}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('location')}
+                    value={addFormData.location}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, location: val }))}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('gstNumber')}
+                    value={addFormData.gstNumber}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, gstNumber: val }))}
+                  />
+                </View>
+              ) : (
+                <View style={styles.formContainer}>
+                  <Text style={styles.formLabel}>{t('jobDetails')}</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('fullName')} // Reusing for Job Title
+                    value={addFormData.title}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, title: val }))}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('vacancies')}
+                    value={addFormData.vacancies}
+                    keyboardType="number-pad"
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, vacancies: val }))}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={t('salary')}
+                    value={addFormData.salary}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, salary: val }))}
+                  />
+
+                  <Text style={[styles.formLabel, { fontSize: 14, marginBottom: 8 }]}>{t('jobType')}</Text>
+                  <View style={[styles.ageChipsRow, { marginBottom: 16 }]}>
+                    {['Full-time', 'Part-time', 'Remote'].map((type) => (
+                      <TouchableOpacity
+                        key={type}
+                        style={[styles.ageChip, addFormData.jobType === type && styles.ageChipActive]}
+                        onPress={() => setAddFormData(p => ({ ...p, jobType: type }))}
+                      >
+                        <Text style={[styles.ageChipText, addFormData.jobType === type && styles.ageChipTextActive]}>
+                          {type}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TextInput
+                    style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
+                    placeholder={t('requirements')}
+                    multiline
+                    value={addFormData.requirements}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, requirements: val }))}
+                  />
+                  <TextInput
+                    style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
+                    placeholder={t('applicationInstructions')}
+                    multiline
+                    value={addFormData.howToApply}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, howToApply: val }))}
+                  />
+                  <TextInput
+                    style={[styles.modalInput, { height: 80, textAlignVertical: 'top' }]}
+                    placeholder={t('description')}
+                    multiline
+                    value={addFormData.description}
+                    onChangeText={(val: string) => setAddFormData(p => ({ ...p, description: val }))}
+                  />
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={md.cta}>
+              <TouchableOpacity
+                style={[md.applyBtn, { backgroundColor: '#10B981' }]}
+                onPress={() => {
+                  if (addFormStep === 1) setAddFormStep(2);
+                  else handleAddSubmit();
+                }}
+              >
+                <Text style={md.applyBtnText}>
+                  {addFormStep === 1 ? t('next') : t('submit')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -456,7 +636,20 @@ export default function JobsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  header: {
+    backgroundColor: '#10B981',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    resizeMode: 'contain',
+    width: '100%',
+    left: '-35%',
+  },
+  headerOverlay: {
+    paddingBottom: 32,
+  },
   backButton: {
     margin: 16, width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center',
@@ -510,4 +703,69 @@ const styles = StyleSheet.create({
   jobTypeBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   jobTypeText: { fontSize: 10, fontWeight: '800' },
   jobSalary: { fontSize: 11, fontWeight: '700', color: '#1F2937' },
+  addRequirementBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    alignSelf: 'center',
+    marginTop: -20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addRequirementBtnText: {
+    color: '#059669',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  formContainer: {
+    padding: 8,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    fontSize: 14,
+  },
+  ageChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  ageChip: {
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    backgroundColor: '#F8FAFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 100,
+  },
+  ageChipActive: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  ageChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  ageChipTextActive: {
+    color: '#FFFFFF',
+  },
 });

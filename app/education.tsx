@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ImageBackground,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -13,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../utils/api';
 import { useLanguageStore } from '../store/languageStore';
+import healthcareBanner from '../assets/images/parth-side.png';
 
 export default function EducationScreen() {
   const router = useRouter();
@@ -82,7 +85,7 @@ export default function EducationScreen() {
       description: t('freeSkillDevelopmentCourses'),
       icon: 'construct',
       color: '#10B981',
-      route: '/skill-training',
+      url: 'https://ai-lms-zeta-nine.vercel.app',
     },
     {
       id: 'career',
@@ -90,22 +93,39 @@ export default function EducationScreen() {
       description: t('professionalCareerCounseling'),
       icon: 'briefcase',
       color: '#8B5CF6',
-      route: '/career-guidance',
+      url: 'https://v0-ai-career-guidance-platform-ten.vercel.app/',
+    },
+    {
+      id: 'ai-tutor',
+      title: t('aiTutor'),
+      description: t('aiTutorDesc'),
+      icon: 'hardware-chip',
+      color: '#EC4899',
+      url: 'https://school-ai-ten.vercel.app/',
     },
   ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Ionicons name={headerIcon as any} size={48} color="#fff" />
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
-          <Text style={styles.headerSubtitle}>{headerSubtitle}</Text>
-        </View>
-      </LinearGradient>
+      <ImageBackground
+        source={healthcareBanner}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <LinearGradient
+          colors={['rgba(245, 158, 11, 0.35)', 'rgba(217, 119, 6, 0.5)']}
+          style={styles.headerOverlay}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Ionicons name={headerIcon as any} size={48} color="#fff" />
+            <Text style={styles.headerTitle}>{headerTitle}</Text>
+            <Text style={styles.headerSubtitle}>{headerSubtitle}</Text>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
 
       <ScrollView
         style={styles.scrollView}
@@ -122,7 +142,13 @@ export default function EducationScreen() {
               <TouchableOpacity
                 key={service.id}
                 style={styles.serviceCard}
-                onPress={() => router.push(service.route as any)}
+                onPress={() => {
+                  if ('url' in service && service.url) {
+                    Linking.openURL(service.url);
+                  } else if ('route' in service && service.route) {
+                    router.push(service.route as any);
+                  }
+                }}
               >
                 <View style={[styles.serviceIcon, { backgroundColor: service.color + '20' }]}>
                   <Ionicons name={service.icon as any} size={28} color={service.color} />
@@ -235,9 +261,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    paddingBottom: 32,
+    backgroundColor: '#F59E0B',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    resizeMode: 'contain',
+    width: '100%',
+    left: '35%',
+    transform: [{ scaleX: -1 }],
+  },
+  headerOverlay: {
+    paddingBottom: 32,
   },
   backButton: {
     margin: 16,

@@ -39,7 +39,7 @@ export default function ReportIssueScreen() {
 
   const handleSubmitIssue = async () => {
     if (!issueForm.issue_type || !issueForm.description || !issueForm.location) {
-      Alert.alert('Error', t('fillAllFields') || 'Please fill all fields');
+      Alert.alert(t('error'), t('fillAllFieldsReport'));
       return;
     }
 

@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../../store/languageStore';
+import healthcareBanner from '../../assets/images/parth-side.png';
 
 export default function VoterDashboard() {
   const router = useRouter();
@@ -20,18 +21,27 @@ export default function VoterDashboard() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient colors={['#3B82F6', '#2563EB']} style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="checkbox" size={36} color="#3B82F6" />
+      <ImageBackground
+        source={healthcareBanner}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <LinearGradient
+          colors={['rgba(59, 130, 246, 0.3)', 'rgba(37, 100, 235, 0.5)']}
+          style={styles.headerOverlay}
+        >
+          <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="checkbox" size={36} color="#3B82F6" />
+            </View>
+            <Text style={styles.headerTitle}>{t('smartVoterTitle')}</Text>
+            <Text style={styles.headerSubtitle}>{t('voterServicesPortal')}</Text>
           </View>
-          <Text style={styles.headerTitle}>{t('smartVoterTitle')}</Text>
-          <Text style={styles.headerSubtitle}>{t('voterServicesPortal')}</Text>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </ImageBackground>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
@@ -63,9 +73,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    paddingBottom: 32,
+    backgroundColor: '#3B82F6',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    resizeMode: 'contain',
+    width: '100%',
+    left: '35%',
+    transform: [{ scaleX: -1 }],
+  },
+  headerOverlay: {
+    paddingBottom: 32,
   },
   backButton: {
     margin: 16,

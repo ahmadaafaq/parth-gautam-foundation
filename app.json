@@ -4,7 +4,7 @@
     "slug": "pg-foundation",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/PG-App-Logo.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/PG-App-Logo.png",
         "backgroundColor": "#3B82F6"
       },
       "permissions": [
@@ -36,7 +36,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/PG-App-Logo.png"
     },
     "plugins": [
       "expo-router",
@@ -49,12 +49,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-image.png",
+          "image": "./assets/images/PG-App-Logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#3B82F6"
+          "backgroundColor": "#F7983E"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

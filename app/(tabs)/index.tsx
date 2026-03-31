@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
@@ -15,6 +16,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suggestionsAPI, programsAPI } from '../../utils/api';
+import bannerImage from '../../assets/images/parth-gautam-umesh-gautam.png';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -109,25 +112,30 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+
+
         {/* Header */}
         <LinearGradient colors={['#3B82F6', '#2563EB']} style={styles.header}>
           <View style={styles.greetingRow}>
             <View style={styles.greetingContent}>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.userName}>{user.name}</Text>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.notificationButton}>
-                <Ionicons name="notifications-outline" size={24} color="#fff" />
+              <LanguageSwitcher variant="light" />
+              <TouchableOpacity
+                style={styles.notificationButton}
+                onPress={() => router.push('/notifications')}
+              >
+                <Ionicons name="notifications-outline" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.statusBadge}>
-            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-            <Text style={styles.statusText}>{t('citizenMember')} • {t('ward')} {user.ward}</Text>
-          </View>
         </LinearGradient>
+        <Image
+          source={bannerImage}
+          style={styles.mainBanner}
+          resizeMode="cover"
+        />
 
         {/* Citizen Card Mini Widget */}
         <View style={styles.cardWidget}>
@@ -309,8 +317,9 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    padding: 24,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    marginBottom: 2,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
@@ -318,7 +327,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   greetingContent: {
     flex: 1,
@@ -339,12 +348,16 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   notificationButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 24,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  mainBanner: {
+    width: '100%',
+    height: 210,
   },
   statusBadge: {
     flexDirection: 'row',

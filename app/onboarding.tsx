@@ -19,6 +19,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { authAPI, seedAPI } from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSignUp, useClerk } from '@clerk/clerk-expo';
 
 const { width } = Dimensions.get('window');
 
@@ -162,6 +163,13 @@ export default function OnboardingScreen() {
   const { t } = useLanguageStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [otpArray, setOtpArray] = useState(['', '', '', '', '', '']);
+  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [clerkStatus, setClerkStatus] = useState<string | null>(null);
+  const { signUp, isLoaded, setActive } = useSignUp();
+  const { client } = useClerk();
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -176,6 +184,10 @@ export default function OnboardingScreen() {
     ward: '',
     occupation: '',
     interests: [] as string[],
+    gender: '',
+    address: '',
+    isVoter: null as boolean | null,
+    consent: false,
   });
 
   const update = (key: keyof typeof formData) => (val: string) =>
@@ -198,15 +210,72 @@ export default function OnboardingScreen() {
     }));
   };
 
+  const handleOtpChange = (value: string, index: number) => {
+    const newOtp = [...otpArray];
+    newOtp[index] = value;
+    setOtpArray(newOtp);
+
+    // Auto-advance
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !otpArray[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
   const handleContinue = async () => {
     if (step === 1) {
-      const digits = formData.phone.replace(/\D/g, '');
-      if (digits.length < 10) {
-        Alert.alert(t('error'), 'Please enter a valid 10-digit mobile number');
-        return;
+      if (!verificationPending) {
+        // Send OTP
+        const digits = formData.phone.replace(/\D/g, '');
+        if (digits.length < 10) {
+          Alert.alert(t('error'), 'Please enter a valid 10-digit mobile number');
+          return;
+        }
+
+        if (!isLoaded) return;
+        setLoading(true);
+        try {
+          const finalPhone = formData.phone.trim().startsWith('+') ? formData.phone.trim().replace(/[^\d+]/g, '') : `+91${digits}`;
+
+          await signUp.create({ phoneNumber: finalPhone });
+          await signUp.preparePhoneNumberVerification();
+          setVerificationPending(true);
+        } catch (error: any) {
+          console.error(error);
+          Alert.alert(t('error'), error.errors?.[0]?.longMessage || 'Failed to send OTP');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Verify OTP
+        const enteredOtp = otpArray.join('');
+        if (enteredOtp.length < 6) {
+          Alert.alert(t('error'), 'Please enter the 6-digit OTP');
+          return;
+        }
+
+        if (!isLoaded) return;
+        setLoading(true);
+        try {
+          const completeSignUp = await signUp.attemptPhoneNumberVerification({ code: enteredOtp });
+          if (completeSignUp.status === 'complete' || completeSignUp.status === 'missing_requirements') {
+            setClerkStatus(completeSignUp.status);
+            setPendingSessionId(completeSignUp.createdSessionId || null);
+            setStep(2);
+            setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: false }), 50);
+          }
+        } catch (error: any) {
+          console.error(error);
+          Alert.alert(t('error'), error.errors?.[0]?.longMessage || 'Invalid OTP');
+        } finally {
+          setLoading(false);
+        }
       }
-      setStep(2);
-      setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: false }), 50);
     } else {
       if (!formData.name.trim()) {
         Alert.alert(t('error'), 'Please enter your full name');
@@ -220,25 +289,66 @@ export default function OnboardingScreen() {
         Alert.alert(t('error'), 'Please select at least one interest');
         return;
       }
+      if (formData.isVoter === null) {
+        Alert.alert(t('error'), 'Please select whether you are a voter');
+        return;
+      }
 
+      if (!isLoaded) return;
       setLoading(true);
       try {
-        // seeding is now handled server-side or via separate script if needed
-        // await seedAPI.seedDatabase().catch(() => { });
+        let finalSessionId = null;
+
+        if (clerkStatus === 'missing_requirements') {
+          const updatedSignUp = await signUp.update({
+            firstName: formData.name,
+          });
+
+          if (updatedSignUp.status === 'complete') {
+            finalSessionId = updatedSignUp.createdSessionId;
+          } else {
+            Alert.alert(
+              'Clerk Configuration Error',
+              `Status: ${updatedSignUp.status}\nMissing: [${updatedSignUp.missingFields?.join(', ')}]\nPlease disable these requirements in the Clerk Dashboard or restart.`
+            );
+            setLoading(false);
+            return;
+          }
+        } else if (clerkStatus === 'complete') {
+          finalSessionId = pendingSessionId;
+        }
+
+        if (finalSessionId) {
+          await setActive({ session: finalSessionId });
+
+          if (clerkStatus === 'complete' && formData.name) {
+            try {
+              const currentSession = client.activeSessions.find(s => s.id === finalSessionId) || client.sessions.find(s => s.id === finalSessionId);
+              if (currentSession?.user) {
+                await currentSession.user.update({ firstName: formData.name });
+              }
+            } catch (e) {
+              console.error('Failed to update Clerk profile name:', e);
+            }
+          }
+        } else {
+          Alert.alert('Registration Error', 'Failed to retrieve Clerk Session ID. The signup may have expired.');
+          setLoading(false);
+          return;
+        }
+
         const user = await authAPI.register(formData);
         setUser(user);
-        router.replace('/(tabs)');
       } catch (error: any) {
+        console.error('Registration error:', error);
         if (error.response?.status === 400 || error.message?.includes('400')) {
           try {
             const user = await authAPI.login(formData.phone);
             setUser(user);
-            router.replace('/(tabs)');
           } catch {
             Alert.alert(t('error'), 'Failed to login. Please ensure the backend server is running.');
           }
         } else {
-          console.error('Registration error:', error);
           Alert.alert(t('error'), 'Connection failed. Please check if the backend server is running.');
         }
       } finally {
@@ -266,7 +376,11 @@ export default function OnboardingScreen() {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => (step === 2 ? setStep(1) : router.back())}
+              onPress={() => {
+                if (step === 2) setStep(1);
+                else if (verificationPending) setVerificationPending(false);
+                else router.back();
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <View style={styles.backButtonInner}>
@@ -298,25 +412,60 @@ export default function OnboardingScreen() {
             <Text style={styles.stepLabel}>Step {step} of 2</Text>
           </View>
 
-          {/* Step 1 – Phone */}
+          {/* Step 1 – Phone or OTP */}
           {step === 1 && (
             <View style={styles.stepContent}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="phone-portrait-outline" size={36} color="#2563EB" />
-              </View>
-              <Text style={styles.title}>{t('enterMobile')}</Text>
-              <Text style={styles.subtitle}>{t('citizenCardNote')}</Text>
+              {verificationPending ? (
+                <>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="shield-checkmark-outline" size={36} color="#2563EB" />
+                  </View>
+                  <Text style={styles.title}>{t('verifyOtp') || 'Verify OTP'}</Text>
+                  <Text style={styles.subtitle}>
+                    {t('otpSentTo')?.replace('{phone}', formData.phone.startsWith('+') ? formData.phone : `+91 ${formData.phone}`) || `Enter the 6-digit code sent to ${formData.phone.startsWith('+') ? formData.phone : `+91 ${formData.phone}`}`}
+                  </Text>
 
-              <FloatingInput
-                label={t('mobileNumber')}
-                value={formData.phone}
-                onChangeText={update('phone')}
-                keyboardType="phone-pad"
-                maxLength={10}
-                returnKeyType="done"
-                onSubmitEditing={handleContinue}
-                required
-              />
+                  <View style={styles.otpContainer}>
+                    {otpArray.map((digit, index) => (
+                      <TextInput
+                        key={index}
+                        ref={(ref) => {
+                          inputRefs.current[index] = ref;
+                        }}
+                        style={[
+                          styles.otpInput,
+                          digit ? styles.otpInputFilled : null,
+                        ]}
+                        value={digit}
+                        onChangeText={(value) => handleOtpChange(value.replace(/[^0-9]/g, ''), index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                        keyboardType="number-pad"
+                        maxLength={1}
+                        selectTextOnFocus
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="phone-portrait-outline" size={36} color="#2563EB" />
+                  </View>
+                  <Text style={styles.title}>{t('enterMobile')}</Text>
+                  <Text style={styles.subtitle}>{t('citizenCardNote')}</Text>
+
+                  <FloatingInput
+                    label={t('mobileNumber')}
+                    value={formData.phone}
+                    onChangeText={update('phone')}
+                    keyboardType="phone-pad"
+                    maxLength={13}
+                    returnKeyType="done"
+                    onSubmitEditing={handleContinue}
+                    required
+                  />
+                </>
+              )}
             </View>
           )}
 
@@ -376,19 +525,79 @@ export default function OnboardingScreen() {
               <Text style={styles.interestsLabel}>{t('occupation')}</Text>
               <View style={styles.ageChipsRow}>
                 {[
-                  'Student', 'Government Job', 'Private Job',
-                  'Business', 'Farmer', 'Homemaker', 'Retired', 'Other'
+                  { id: 'Student', label: t('occStudent') || 'Student' },
+                  { id: 'Government Job', label: t('occGovJob') || 'Government Job' },
+                  { id: 'Private Job', label: t('occPrivateJob') || 'Private Job' },
+                  { id: 'Business', label: t('occBusiness') || 'Business' },
+                  { id: 'Farmer', label: t('occFarmer') || 'Farmer' },
+                  { id: 'Homemaker', label: t('occHomemaker') || 'Homemaker' },
+                  { id: 'Retired', label: t('occRetired') || 'Retired' },
+                  { id: 'Other', label: t('other') || 'Other' }
                 ].map((occ) => {
-                  const active = formData.occupation === occ;
+                  const active = formData.occupation === occ.id;
                   return (
                     <TouchableOpacity
-                      key={occ}
+                      key={occ.id}
                       style={[styles.ageChip, active && styles.ageChipActive]}
-                      onPress={() => setFormData((prev) => ({ ...prev, occupation: occ }))}
+                      onPress={() => setFormData((prev) => ({ ...prev, occupation: occ.id }))}
                       activeOpacity={0.75}
                     >
                       <Text style={[styles.ageChipText, active && styles.ageChipTextActive]}>
-                        {occ}
+                        {occ.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Gender Selector */}
+              <Text style={styles.interestsLabel}>{t('gender')}</Text>
+              <View style={styles.ageChipsRow}>
+                {[
+                  { id: 'Male', label: t('male') },
+                  { id: 'Female', label: t('female') },
+                  { id: 'Other', label: t('other') }
+                ].map((g) => {
+                  const active = formData.gender === g.id;
+                  return (
+                    <TouchableOpacity
+                      key={g.id}
+                      style={[styles.ageChip, active && styles.ageChipActive]}
+                      onPress={() => setFormData((prev) => ({ ...prev, gender: g.id }))}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.ageChipText, active && styles.ageChipTextActive]}>
+                        {g.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <FloatingInput
+                label={t('address')}
+                value={formData.address}
+                onChangeText={update('address')}
+                returnKeyType="next"
+              />
+
+              {/* Voter Status Selector */}
+              <Text style={styles.interestsLabel}>{t('isVoter')} <Text style={styles.required}>*</Text></Text>
+              <View style={styles.ageChipsRow}>
+                {[
+                  { id: true, label: t('yes') },
+                  { id: false, label: t('no') }
+                ].map((v) => {
+                  const active = formData.isVoter === v.id;
+                  return (
+                    <TouchableOpacity
+                      key={v.id.toString()}
+                      style={[styles.ageChip, active && styles.ageChipActive]}
+                      onPress={() => setFormData((prev) => ({ ...prev, isVoter: v.id }))}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.ageChipText, active && styles.ageChipTextActive]}>
+                        {v.label}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -421,14 +630,26 @@ export default function OnboardingScreen() {
                   );
                 })}
               </View>
+
+              {/* Consent Checkbox */}
+              <TouchableOpacity
+                style={styles.consentRow}
+                onPress={() => setFormData(prev => ({ ...prev, consent: !prev.consent }))}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.checkbox, formData.consent && styles.checkboxActive]}>
+                  {formData.consent && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                </View>
+                <Text style={styles.consentText}>{t('consentText')}</Text>
+              </TouchableOpacity>
             </View>
           )}
 
           {/* CTA Button */}
           <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
+            style={[styles.btn, (loading || (step === 2 && !formData.consent)) && styles.btnDisabled]}
             onPress={handleContinue}
-            disabled={loading}
+            disabled={loading || (step === 2 && !formData.consent)}
             activeOpacity={0.85}
           >
             {loading ? (
@@ -638,5 +859,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.2,
+  },
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 24,
+  },
+  otpInput: {
+    width: 44,
+    height: 54,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  otpInputFilled: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: '#2563EB',
+  },
+  consentText: {
+    fontSize: 14,
+    color: '#475569',
+    fontWeight: '500',
   },
 });

@@ -1,11 +1,28 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // ─── Base URL ────────────────────────────────────────────────────────────────
-// On Android emulator, `localhost` of the host machine is reachable via 10.0.2.2.
-// On a real device or Expo Go on a physical phone, replace with your machine's
-// LAN IP address, e.g. http://192.168.1.100:8001
-const BASE_URL = "https://pg-foundation-backend.onrender.com/api"
+const getBaseUrl = () => {
+  if (__DEV__) {
+    // For Expo Go: use the machine's IP address dynamically
+    const host = Constants.expoConfig?.hostUri?.split(':').shift();
+    if (host) {
+      return `http://${host}:8001/api`;
+    }
+    // Fallback for Android emulator if host detection fails
+    if (Platform.OS === 'android') {
+      return "http://10.0.2.2:8001/api";
+    }
+    // Default for web/iOS
+    return "http://localhost:8001/api";
+  }
+  // Production URL
+  return "https://pg-foundation-backend.onrender.com/api";
+};
+
+const BASE_URL = "https://pg-foundation-backend-production.up.railway.app/api"
+console.log(`[API] Base URL set to: ${BASE_URL}`);
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -22,8 +39,21 @@ export const authAPI = {
     ward: string;
     occupation: string;
     interests: string[];
+    gender?: string;
+    address?: string;
+    isVoter?: boolean | null;
+    consent?: boolean;
   }) => {
-    const res = await api.post('/auth/register', userData);
+    const payload = {
+      ...userData,
+      is_voter: userData.isVoter ?? false,
+      consent_given_at: userData.consent ? new Date().toISOString() : null,
+    };
+    // Remove the camelCase version before sending
+    delete (payload as any).isVoter;
+    delete (payload as any).consent;
+
+    const res = await api.post('/auth/register', payload);
     return res.data; // full user object from Supabase
   },
 

@@ -15,23 +15,66 @@ import { useRouter } from 'expo-router';
 import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSignIn } from '@clerk/clerk-expo';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
   const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, isLoaded } = useSignIn();
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 10) {
       Alert.alert(t('error'), 'Please enter a valid 10-digit mobile number');
       return;
     }
-    // Navigate to OTP screen with the phone number
-    router.push({
-      pathname: '/otp',
-      params: { phone: digits }
-    });
+
+    if (!isLoaded) return;
+
+    setIsLoading(true);
+    try {
+      const finalPhone = phone.trim().startsWith('+') ? phone.trim().replace(/[^\d+]/g, '') : `+91${digits}`;
+
+      const { supportedFirstFactors } = await signIn.create({
+        identifier: finalPhone,
+      });
+
+      const isPhoneCodeFactor = (factor: any) => factor.strategy === 'phone_code';
+      const phoneCodeFactor = supportedFirstFactors?.find(isPhoneCodeFactor);
+
+      if (phoneCodeFactor) {
+        await signIn.prepareFirstFactor({
+          strategy: 'phone_code',
+          phoneNumberId: (phoneCodeFactor as any).phoneNumberId,
+        });
+
+        // Navigate to OTP screen with the phone number
+        router.push({
+          pathname: '/otp',
+          params: { phone: finalPhone }
+        });
+      } else {
+        Alert.alert(t('error'), 'This phone number is not registered. Please sign up first.');
+      }
+    } catch (err: any) {
+      console.error('Sign in error:', JSON.stringify(err, null, 2));
+      if (err.errors && err.errors[0]?.code === 'form_identifier_not_found') {
+        Alert.alert(
+          'Not Found',
+          'This number is not registered. Please register first.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Register', onPress: () => router.replace('/onboarding') }
+          ]
+        );
+      } else {
+        Alert.alert(t('error'), err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'An error occurred during sign in');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -66,7 +109,7 @@ export default function LoginScreen() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
-              maxLength={10}
+              maxLength={13}
               placeholder="9876543210"
               placeholderTextColor="#9CA3AF"
               returnKeyType="done"

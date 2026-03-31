@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,13 +19,16 @@ import QRCode from 'react-native-qrcode-svg';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { userAPI } from '../../utils/api';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function CitizenCardScreen() {
   const { user, logout, setUser } = useAuthStore();
+  const { signOut } = useAuth();
   const { t } = useLanguageStore();
   const router = useRouter();
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -37,7 +41,7 @@ export default function CitizenCardScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const freshUser = await userAPI.getById(user!.id);
+      // const freshUser = await userAPI.getById(user!.id);
 
       const mockHistory = [
         {
@@ -60,7 +64,7 @@ export default function CitizenCardScreen() {
         }
       ];
 
-      setUser(freshUser);
+      // setUser(freshUser);
       setActivities(mockHistory);
     } catch (error) {
       console.error('Error loading card data:', error);
@@ -84,6 +88,7 @@ export default function CitizenCardScreen() {
         text: t('logout'),
         style: 'destructive',
         onPress: async () => {
+          await signOut();
           await logout();
         },
       },
@@ -215,6 +220,31 @@ export default function CitizenCardScreen() {
           </LinearGradient>
         </View>
 
+        {/* Survey Section */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.surveyActionButton}
+            onPress={() => router.push('/survey' as any)}
+          >
+            <LinearGradient
+              colors={['#8B5CF6', '#7C3AED']}
+              style={styles.surveyGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <View style={styles.surveyActionContent}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.surveyActionTitle}>{t('takeSurvey')}</Text>
+                  <Text style={styles.surveyActionSubtitle}>{t('yourFeedbackMatters')}</Text>
+                </View>
+                <View style={styles.surveyIconCircle}>
+                  <Ionicons name="clipboard" size={24} color="#8B5CF6" />
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
         {/* Activity History */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -259,8 +289,107 @@ export default function CitizenCardScreen() {
           )}
         </View>
 
+        {/* My Issues Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('myIssues')}</Text>
+          {[
+            {
+              id: 'i1',
+              title: 'Street Light Not Working',
+              status: 'Pending',
+              comments: 'Our executive will visit your ward by tomorrow morning.',
+              history: [
+                { event: 'reported', date: '2024-03-20', time: '10:00 AM' },
+                { event: 'forwarded', date: '2024-03-21', time: '02:30 PM' },
+              ]
+            },
+            {
+              id: 'i2',
+              title: 'Garbage Collection Delayed',
+              status: 'Resolved',
+              comments: 'The area has been cleared. Thank you for reporting.',
+              history: [
+                { event: 'reported', date: '2024-03-18', time: '09:15 AM' },
+                { event: 'forwarded', date: '2024-03-19', time: '11:45 AM' },
+                { event: 'resolved', date: '2024-03-22', time: '04:20 PM' },
+              ]
+            },
+          ].map((issue) => (
+            <TouchableOpacity 
+              key={issue.id} 
+              style={styles.issueCard}
+              onPress={() => setSelectedIssue(issue)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.issueHeader}>
+                <Text style={styles.issueTitle}>{issue.title}</Text>
+                <View style={[
+                  styles.statusBadge,
+                  { backgroundColor: issue.status === 'Resolved' ? '#DCFCE7' : '#FEF3C7' }
+                ]}>
+                  <Text style={[
+                    styles.statusText,
+                    { color: issue.status === 'Resolved' ? '#166534' : '#92400E' }
+                  ]}>
+                    {issue.status}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.commentBox}>
+                <Text style={styles.commentLabel}>{t('comments')}:</Text>
+                <Text style={styles.commentText}>{issue.comments}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {/* Issue History Modal */}
+      <Modal visible={!!selectedIssue} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('issueHistory')}</Text>
+              <TouchableOpacity onPress={() => setSelectedIssue(null)}>
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <Text style={styles.modalIssueTitle}>{selectedIssue?.title}</Text>
+              
+              <View style={styles.timeline}>
+                {selectedIssue?.history.map((h: any, idx: number) => (
+                  <View key={idx} style={styles.timelineItem}>
+                    <View style={styles.timelineLeft}>
+                      <View style={[
+                        styles.timelineDot,
+                        idx === 0 && styles.timelineDotActive
+                      ]} />
+                      {idx !== selectedIssue.history.length - 1 && (
+                        <View style={styles.timelineLine} />
+                      )}
+                    </View>
+                    <View style={styles.timelineRight}>
+                      <Text style={styles.timelineEvent}>{t(h.event as any)}</Text>
+                      <Text style={styles.timelineDate}>
+                        {h.date} {t('at')} {h.time}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.modalCommentSection}>
+                <Text style={styles.commentLabel}>{t('comments')}</Text>
+                <Text style={styles.modalCommentText}>{selectedIssue?.comments}</Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -532,5 +661,182 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#D97706',
+  },
+  issueCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  issueHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  issueTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    flex: 1,
+    marginRight: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  commentBox: {
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 12,
+  },
+  commentLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  commentText: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '60%',
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
+  modalContent: {
+    paddingBottom: 40,
+  },
+  modalIssueTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B82F6',
+    marginBottom: 24,
+  },
+  timeline: {
+    paddingLeft: 8,
+    marginBottom: 32,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    minHeight: 60,
+  },
+  timelineLeft: {
+    alignItems: 'center',
+    marginRight: 16,
+    width: 20,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E2E8F0',
+    zIndex: 1,
+  },
+  timelineDotActive: {
+    backgroundColor: '#3B82F6',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: -2,
+  },
+  timelineRight: {
+    flex: 1,
+    paddingTop: -2,
+  },
+  timelineEvent: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  timelineDate: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  modalCommentSection: {
+    backgroundColor: '#F3F4F6',
+    padding: 16,
+    borderRadius: 16,
+  },
+  modalCommentText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  surveyActionButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  surveyGradient: {
+    padding: 20,
+  },
+  surveyActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  surveyActionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  surveyActionSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  surveyIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
   },
 });

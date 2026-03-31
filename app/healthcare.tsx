@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { healthCampsAPI } from '../utils/api';
 import { useLanguageStore } from '../store/languageStore';
+import healthcareBanner from '../assets/images/parth-side.png';
 
 export default function HealthcareScreen() {
   const router = useRouter();
@@ -82,16 +84,25 @@ export default function HealthcareScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient colors={['#EF4444', '#DC2626']} style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Ionicons name="medical" size={48} color="#fff" />
-          <Text style={styles.headerTitle}>{t('smartHealthcare')}</Text>
-          <Text style={styles.headerSubtitle}>{t('accessHealthcare')}</Text>
-        </View>
-      </LinearGradient>
+      <ImageBackground
+        source={healthcareBanner}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <LinearGradient
+          colors={['rgba(239, 68, 68, 0.35)', 'rgba(220, 38, 38, 0.5)']}
+          style={styles.headerOverlay}
+        >
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Ionicons name="medical" size={48} color="#fff" />
+            <Text style={styles.headerTitle}>{t('smartHealthcare')}</Text>
+            <Text style={styles.headerSubtitle}>{t('accessHealthcare')}</Text>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
 
       <ScrollView
         style={styles.scrollView}
@@ -222,9 +233,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    paddingBottom: 32,
+    backgroundColor: '#EF4444',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    resizeMode: 'contain',
+    width: '100%',
+    left: '-35%',
+  },
+  headerOverlay: {
+    paddingBottom: 32,
   },
   backButton: {
     margin: 16,

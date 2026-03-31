@@ -141,8 +141,8 @@ export default function CityMapScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({});
-        setUserLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        // const pos = await Location.getCurrentPositionAsync({});
+        // setUserLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         setLocationStatus('granted');
       } else {
         setLocationStatus('denied');

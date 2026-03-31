@@ -207,7 +207,7 @@ export default function TeleconsultationScreen() {
     setSelectedDoctor(doctor);
     setSelectedDate(DATES[0].key);
     setSelectedSlot(null);
-    setStep('mode');
+    setStep('schedule');
   };
 
   const handleInstant = () => setStep('videocall');
@@ -320,61 +320,6 @@ export default function TeleconsultationScreen() {
     );
   }
 
-  // ── Consultation Mode ──
-  if (step === 'mode') {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <LinearGradient colors={['#10B981', '#059669']} style={styles.bookingHeader}>
-          <TouchableOpacity onPress={() => setStep('list')} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.bookingHeaderTitle}>{t('chooseConsultationType')}</Text>
-          <View style={{ width: 40 }} />
-        </LinearGradient>
-
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
-          {/* Doctor card */}
-          <View style={styles.selectedDoctorCard}>
-            <Image source={{ uri: selectedDoctor!.avatar }} style={styles.selectedAvatar} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.selectedDoctorName}>{selectedDoctor!.name}</Text>
-              <Text style={[styles.selectedSpec, { color: '#10B981' }]}>{selectedDoctor!.specialization}</Text>
-              <View style={styles.hospitalRow}>
-                <Ionicons name="location-outline" size={12} color="#6B7280" />
-                <Text style={styles.hospitalText} numberOfLines={1}>{selectedDoctor!.hospital}</Text>
-              </View>
-            </View>
-          </View>
-
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>{t('howWouldYouLikeToConsult')}</Text>
-
-          {/* Instant */}
-          <TouchableOpacity style={styles.modeCard} onPress={handleInstant} activeOpacity={0.85}>
-            <LinearGradient colors={['#0EA5E9', '#0284C7']} style={styles.modeIconBg}>
-              <Ionicons name="flash" size={28} color="#fff" />
-            </LinearGradient>
-            <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>{t('instantConsultation')}</Text>
-              <Text style={styles.modeDesc}>{t('connectDoctorVideoCall')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Scheduled */}
-          <TouchableOpacity style={styles.modeCard} onPress={handleSchedule} activeOpacity={0.85}>
-            <LinearGradient colors={['#10B981', '#059669']} style={styles.modeIconBg}>
-              <Ionicons name="calendar" size={28} color="#fff" />
-            </LinearGradient>
-            <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>{t('scheduledConsultation')}</Text>
-              <Text style={styles.modeDesc}>{t('pickDateTimeVideoConsultation')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color="#9CA3AF" />
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
 
   // ── Schedule Form ──
   const selectedDateObj = DATES.find(d => d.key === selectedDate);
@@ -382,7 +327,7 @@ export default function TeleconsultationScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <LinearGradient colors={['#10B981', '#059669']} style={styles.bookingHeader}>
-        <TouchableOpacity onPress={() => setStep('mode')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => setStep('list')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.bookingHeaderTitle}>{t('selectDateTime')}</Text>

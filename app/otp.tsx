@@ -15,6 +15,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { authAPI } from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSignIn } from '@clerk/clerk-expo';
 
 export default function OtpScreen() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function OtpScreen() {
   const setUser = useAuthStore((state) => state.setUser);
   const { t } = useLanguageStore();
 
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -39,7 +40,7 @@ export default function OtpScreen() {
     setOtp(newOtp);
 
     // Auto-advance
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -50,16 +51,13 @@ export default function OtpScreen() {
     }
   };
 
+  const { signIn, isLoaded, setActive } = useSignIn();
+
   const handleVerify = async () => {
     const enteredOtp = otp.join('');
 
-    if (enteredOtp.length < 4) {
-      Alert.alert(t('error'), 'Please enter the complete 4-digit OTP');
-      return;
-    }
-
-    if (enteredOtp !== '1234') {
-      Alert.alert(t('error'), 'Invalid OTP. Please enter 1234 for testing.');
+    if (enteredOtp.length < 6) {
+      Alert.alert(t('error'), 'Please enter the complete 6-digit OTP');
       return;
     }
 
@@ -69,22 +67,33 @@ export default function OtpScreen() {
       return;
     }
 
+    if (!isLoaded) return;
+
     setLoading(true);
     try {
-      const user = await authAPI.login(phone);
-      setUser(user);
-      // The global layout guard will automatically redirect us if we are not in tabs,
-      // but manually routing to tabs is safer for direct navigation.
-      router.replace('/(tabs)');
+      // Step 1: Verify OTP with Clerk
+      const completeSignIn = await signIn.attemptFirstFactor({
+        strategy: 'phone_code',
+        code: enteredOtp,
+      });
+
+      if (completeSignIn.status === 'complete') {
+        // Step 2: Set the active session
+        await setActive({ session: completeSignIn.createdSessionId });
+
+        // Step 3: Fetch app-specific user profile
+        const user = await authAPI.login(phone);
+        setUser(user);
+      } else {
+        console.error('SignIn incomplete:', completeSignIn);
+        Alert.alert(t('error'), 'Verification incomplete. Please try again.');
+      }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error:', JSON.stringify(error, null, 2));
+      const errMsg = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Invalid OTP. Please check and try again.';
       Alert.alert(
         'Login Failed',
-        'Could not find an account with this number. Please register first.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Register', onPress: () => router.replace('/onboarding') }
-        ]
+        errMsg,
       );
     } finally {
       setLoading(false);
@@ -115,7 +124,7 @@ export default function OtpScreen() {
           </View>
           <Text style={styles.title}>{t('verifyOtp')}</Text>
           <Text style={styles.subtitle}>
-            Enter the 4-digit code sent to +91 {phone}
+            {t('otpSentTo')?.replace('{phone}', phone?.startsWith('+') ? phone : `+91 ${phone}`) || `Enter the 6-digit code sent to ${phone?.startsWith('+') ? phone : `+91 ${phone}`}`}
           </Text>
 
           <View style={styles.otpContainer}>
@@ -222,13 +231,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   otpInput: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
+    width: 48,
+    height: 56,
+    borderRadius: 14,
     backgroundColor: '#F8FAFF',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1E293B',
     textAlign: 'center',

@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useLanguageStore } from '../store/languageStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
 
           {/* Welcome badge */}
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>✦  WELCOME TO  ✦</Text>
+            <Text style={styles.badgeText}>✦  {t('welcomeTitle').toUpperCase()}  ✦</Text>
           </View>
 
           {/* App name */}
@@ -90,7 +90,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const LOGO = 140;
+const LOGO = 120;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -186,12 +186,13 @@ const styles = StyleSheet.create({
 
   /* App name */
   appName: {
-    fontSize: 30,
+    fontSize: 28, // Slightly reduced to fit better
     fontWeight: '900',
     color: '#fff',
     textAlign: 'center',
-    lineHeight: 38,
+    lineHeight: 40,
     marginBottom: 20,
+    width: '100%',
   },
 
   /* Divider */
@@ -204,11 +205,11 @@ const styles = StyleSheet.create({
   },
 
   description: {
-    fontSize: 15.5,
+    fontSize: 16,
     color: 'rgba(255,255,255,0.72)',
     textAlign: 'center',
-    lineHeight: 25,
-    maxWidth: 300,
+    lineHeight: 26,
+    width: '100%',
   },
 
   /* ── Footer ── */
