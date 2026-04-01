@@ -18,15 +18,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { Linking, Alert } from 'react-native';
+import { Linking, Alert, TextInput } from 'react-native';
 import { hospitalAPI } from '../utils/api';
+import * as DocumentPicker from 'expo-document-picker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TIME_SLOTS = [
-  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
-  '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
-  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
-];
+// Static slots removed in favor of dynamic generation
 
 function getNextDays(count: number) {
   const days = [];
@@ -200,8 +197,68 @@ export default function TeleconsultationScreen() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [userAppointments, setUserAppointments] = useState<any[]>([]);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
+
+  // ── Dynamic Slot Generation ──
+  const availableSlots = React.useMemo(() => {
+    const slots = [];
+    // From 9:00 AM (540 mins) to 5:00 PM (1020 mins)
+    for (let minutes = 540; minutes <= 1020; minutes += 15) {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      const period = h >= 12 ? 'PM' : 'AM';
+      let displayH = h > 12 ? h - 12 : h;
+      if (displayH === 0) displayH = 12;
+      const slotStr = `${displayH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`;
+      slots.push({ h, m, str: slotStr });
+    }
+
+    // Get current IST time (UTC + 5:30)
+    const now = new Date();
+    const istOffset = 5.5 * 3600000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const todayKey = `${istNow.getUTCFullYear()}-${String(istNow.getUTCMonth() + 1).padStart(2, '0')}-${String(istNow.getUTCDate()).padStart(2, '0')}`;
+
+    if (selectedDate === todayKey) {
+      const currentH = istNow.getUTCHours();
+      const currentM = istNow.getUTCMinutes();
+      return slots.filter(s => (s.h > currentH) || (s.h === currentH && s.m > currentM)).map(s => s.str);
+    }
+    return slots.map(s => s.str);
+  }, [selectedDate]);
+
   const [fetchingAppts, setFetchingAppts] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [notes, setNotes] = useState('');
+
+  // ── Document Upload State ──
+  const [uploading, setUploading] = useState(false);
+  const [docTab, setDocTab] = useState<'medical' | 'prescription' | 'imaging'>('medical');
+  const [medicalDocs, setMedicalDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+  const [prescriptionDocs, setPrescriptionDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+  const [imagingDocs, setImagingDocs] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        multiple: true,
+      });
+
+      if (!result.canceled) {
+        if (docTab === 'medical') setMedicalDocs([...medicalDocs, ...result.assets]);
+        else if (docTab === 'prescription') setPrescriptionDocs([...prescriptionDocs, ...result.assets]);
+        else if (docTab === 'imaging') setImagingDocs([...imagingDocs, ...result.assets]);
+      }
+    } catch (err) {
+      console.error('Pick error:', err);
+    }
+  };
+
+  const removeDoc = (category: string, index: number) => {
+    if (category === 'medical') setMedicalDocs(medicalDocs.filter((_, i) => i !== index));
+    else if (category === 'prescription') setPrescriptionDocs(prescriptionDocs.filter((_, i) => i !== index));
+    else if (category === 'imaging') setImagingDocs(imagingDocs.filter((_, i) => i !== index));
+  };
 
   // ── Sync Selected Date (Defensive Fix for midnight staleness) ──
   useEffect(() => {
@@ -270,8 +327,26 @@ export default function TeleconsultationScreen() {
 
     try {
       setBooking(true);
-      // Small artificial delay for visual feedback, consistent with premium feel
-      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // 1. Upload Documents
+      const uploadCategory = async (docs: DocumentPicker.DocumentPickerAsset[]) => {
+        const urls: string[] = [];
+        for (const doc of docs) {
+          const res = await hospitalAPI.uploadDocument({
+            uri: doc.uri,
+            name: doc.name,
+            type: doc.mimeType || 'application/octet-stream',
+          }, user?.citizen_id || user?.id || 'guest');
+          urls.push(res.url);
+        }
+        return urls;
+      };
+
+      const [mUrls, pUrls, iUrls] = await Promise.all([
+        uploadCategory(medicalDocs),
+        uploadCategory(prescriptionDocs),
+        uploadCategory(imagingDocs),
+      ]);
 
       const result = await hospitalAPI.bookOpdOnline({
         patientName: user.name.trim(),
@@ -286,7 +361,10 @@ export default function TeleconsultationScreen() {
         date: selectedDate,
         time: selectedSlot,
         appointmentType: 'Online Consultation',
-        notes: `Online appointment`
+        notes: notes.trim() || 'Online appointment',
+        medicalReports: mUrls,
+        prescriptions: pUrls,
+        imaging: iUrls,
       });
 
       if (!result.success) throw new Error(result.message || 'Booking failed');
@@ -480,8 +558,30 @@ export default function TeleconsultationScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.selectedDoctorName}>{selectedDoctor!.name}</Text>
             <Text style={[styles.selectedSpec, { color: '#10B981' }]}>{selectedDoctor!.specialization}</Text>
-
           </View>
+        </View>
+
+        {/* Symptoms Section */}
+        <View style={styles.section}>
+          <View style={styles.inputGroup}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="document-text-outline" size={18} color="#9CA3AF" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+                placeholder="Describe your symptoms / notes..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+              />
+            </View>
+          </View>
+          {user?.citizen_id && (
+            <View style={styles.citizenBadge}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#10B981" />
+              <Text style={styles.citizenBadgeText}>Citizen ID: {user.citizen_id}</Text>
+            </View>
+          )}
         </View>
 
         {/* Date Picker */}
@@ -507,21 +607,76 @@ export default function TeleconsultationScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('selectTimeSlot')}</Text>
           <View style={styles.slotsGrid}>
-            {TIME_SLOTS.map((slot) => (
-              <TouchableOpacity
-                key={slot}
-                style={[styles.slotChip, selectedSlot === slot && styles.slotChipActiveGreen]}
-                onPress={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
-              >
-                <Text style={[styles.slotText, selectedSlot === slot && styles.slotTextActive]}>{slot}</Text>
-              </TouchableOpacity>
+            {availableSlots.length > 0 ? (
+              availableSlots.map((slot) => (
+                <TouchableOpacity
+                  key={slot}
+                  style={[styles.slotChip, selectedSlot === slot && styles.slotChipActiveGreen]}
+                  onPress={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+                >
+                  <Text style={[styles.slotText, selectedSlot === slot && styles.slotTextActive]}>{slot}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noSlotsContainer}>
+                <Ionicons name="time-outline" size={24} color="#9CA3AF" />
+                <Text style={styles.noSlotsText}>{t('noSlotsAvailableToday') || 'No slots available for today'}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Document Upload Tabs */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('uploadDocuments')}</Text>
+          <Text style={styles.docSubtitle}>{t('viewableByDoctorNote')}</Text>
+
+          <View style={styles.docTabs}>
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'medical' && styles.docTabActive]}
+              onPress={() => setDocTab('medical')}
+            >
+              <Text style={[styles.docTabText, docTab === 'medical' && styles.docTabTextActive]}>{t('medicalReport')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'prescription' && styles.docTabActive]}
+              onPress={() => setDocTab('prescription')}
+            >
+              <Text style={[styles.docTabText, docTab === 'prescription' && styles.docTabTextActive]}>{t('prescription')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'imaging' && styles.docTabActive]}
+              onPress={() => setDocTab('imaging')}
+            >
+              <Text style={[styles.docTabText, docTab === 'imaging' && styles.docTabTextActive]}>{t('imaging')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.docTabContent}>
+            {/* Show selected files for active tab */}
+            {(docTab === 'medical' ? medicalDocs : docTab === 'prescription' ? prescriptionDocs : imagingDocs).map((doc, idx) => (
+              <View key={idx} style={styles.fileRow}>
+                <View style={styles.fileInfo}>
+                  <Ionicons name={doc.mimeType?.includes('pdf') ? 'document-text' : 'image'} size={20} color="#6B7280" />
+                  <Text style={styles.fileName} numberOfLines={1}>{doc.name}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeDoc(docTab, idx)}>
+                  <Ionicons name="close-circle" size={20} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
             ))}
+
+            <TouchableOpacity style={styles.addDocBtn} onPress={handlePickDocument}>
+              <Ionicons name="add-circle-outline" size={24} color="#10B981" />
+              <Text style={styles.addDocBtnText}>{t('addDocument')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.maxFilesHint}>{t('maxFilesNote')}</Text>
           </View>
         </View>
 
 
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Book Button */}
@@ -659,6 +814,37 @@ const styles = StyleSheet.create({
   onlineText: { fontSize: 10, fontWeight: '700', color: '#10B981' },
   offlineText: { color: '#9CA3AF' },
   specialization: { fontSize: 13, color: '#EF4444', fontWeight: '600', marginBottom: 4 },
+
+  inputGroup: { marginBottom: 12 },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  inputIcon: { marginTop: 2, marginRight: 8 },
+  textInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1F2937',
+    padding: 0,
+  },
+  citizenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  citizenBadgeText: { fontSize: 11, fontWeight: '700', color: '#10B981' },
+
   hospitalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 3, marginBottom: 6, flex: 1 },
   hospitalText: { fontSize: 11, color: '#6B7280', flex: 1 },
   doctorMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -791,7 +977,76 @@ const styles = StyleSheet.create({
   },
   joinBtnDisabled: { backgroundColor: '#9CA3AF', opacity: 0.8 },
   joinBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  noSlotsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
+    width: '100%',
+  },
+  noSlotsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+
+  docSubtitle: { fontSize: 12, color: '#6B7280', marginBottom: 12, marginTop: -8 },
+  docTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12,
+  },
+  docTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  docTabActive: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  docTabText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  docTabTextActive: { color: '#10B981' },
+  docListContainer: { marginBottom: 16 },
+  docTabContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 100,
+  },
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  fileInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  fileName: { fontSize: 13, color: '#374151', flex: 1 },
+  addDocBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#D1FAE5',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  addDocBtnText: { fontSize: 14, fontWeight: '600', color: '#10B981' },
+  maxFilesHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 8 },
 });
+
+// FileRow component was removed as it's now integrated directly to match the exact OPD Booking structure.
 
 // ─── Video Call Styles ────────────────────────────────────────────────────────
 const vcStyles = StyleSheet.create({

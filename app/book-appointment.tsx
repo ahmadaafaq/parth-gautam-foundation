@@ -22,11 +22,7 @@ import { hospitalAPI } from '../utils/api';
 import * as DocumentPicker from 'expo-document-picker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TIME_SLOTS = [
-  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
-  '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
-  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
-];
+// Static slots removed in favor of dynamic generation
 
 function getNextDays(count: number) {
   const days = [];
@@ -142,6 +138,34 @@ export default function BookAppointmentScreen() {
   const [patientGender, setPatientGender] = useState((user as any)?.gender?.toLowerCase() || 'Others');
   const [notes, setNotes] = useState('');
 
+  // ── Dynamic Slot Generation ──
+  const availableSlots = React.useMemo(() => {
+    const slots = [];
+    // From 9:00 AM (540 mins) to 5:00 PM (1020 mins)
+    for (let minutes = 540; minutes <= 1020; minutes += 15) {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      const period = h >= 12 ? 'PM' : 'AM';
+      let displayH = h > 12 ? h - 12 : h;
+      if (displayH === 0) displayH = 12; // Handle midnight/noon if ever applicable
+      const slotStr = `${displayH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`;
+      slots.push({ h, m, str: slotStr });
+    }
+
+    // Get current IST time (UTC + 5:30)
+    const now = new Date();
+    const istOffset = 5.5 * 3600000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const todayKey = `${istNow.getUTCFullYear()}-${String(istNow.getUTCMonth() + 1).padStart(2, '0')}-${String(istNow.getUTCDate()).padStart(2, '0')}`;
+
+    if (selectedDate === todayKey) {
+      const currentH = istNow.getUTCHours();
+      const currentM = istNow.getUTCMinutes();
+      return slots.filter(s => (s.h > currentH) || (s.h === currentH && s.m > currentM)).map(s => s.str);
+    }
+    return slots.map(s => s.str);
+  }, [selectedDate]);
+
   const [booking, setBooking] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [bookedAppointment, setBookedAppointment] = useState<any>(null);
@@ -251,7 +275,6 @@ export default function BookAppointmentScreen() {
         medicalReports: mUrls,
         prescriptions: pUrls,
         imaging: iUrls,
-        citizenId: user?.citizen_id || 'unknown', // Pass citizenId for upload path consistency
       });
 
       setBookedAppointment(result.appointment);
@@ -435,15 +458,22 @@ export default function BookAppointmentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('selectTimeSlot')}</Text>
           <View style={styles.slotsGrid}>
-            {TIME_SLOTS.map((slot) => (
-              <TouchableOpacity
-                key={slot}
-                style={[styles.slotChip, selectedSlot === slot && styles.slotChipActive]}
-                onPress={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
-              >
-                <Text style={[styles.slotText, selectedSlot === slot && styles.slotTextActive]}>{slot}</Text>
-              </TouchableOpacity>
-            ))}
+            {availableSlots.length > 0 ? (
+              availableSlots.map((slot) => (
+                <TouchableOpacity
+                  key={slot}
+                  style={[styles.slotChip, selectedSlot === slot && styles.slotChipActive]}
+                  onPress={() => setSelectedSlot(selectedSlot === slot ? null : slot)}
+                >
+                  <Text style={[styles.slotText, selectedSlot === slot && styles.slotTextActive]}>{slot}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noSlotsContainer}>
+                <Ionicons name="time-outline" size={24} color="#9CA3AF" />
+                <Text style={styles.noSlotsText}>{t('noSlotsAvailableToday') || 'No slots available for today'}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -790,4 +820,17 @@ const styles = StyleSheet.create({
   },
   addDocBtnText: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
   maxFilesHint: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 8 },
+  noSlotsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
+    width: '100%',
+  },
+  noSlotsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
 });

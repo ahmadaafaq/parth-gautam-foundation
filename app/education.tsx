@@ -8,6 +8,9 @@ import {
   RefreshControl,
   ImageBackground,
   Linking,
+  Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -53,6 +56,16 @@ export default function EducationScreen() {
 
   const [programs, setPrograms] = useState<any[]>(mockPrograms);
   const [refreshing, setRefreshing] = useState(false);
+  const [isAidModalVisible, setIsAidModalVisible] = useState(false);
+  const [aidForm, setAidForm] = useState({
+    studentName: '',
+    parentName: '',
+    institutionName: '',
+    currentClass: '',
+    annualIncome: '',
+    purpose: '',
+    contact: '',
+  });
 
   // Determine context: scholarship, skills, or general
   const isScholarship = type === 'scholarship';
@@ -68,6 +81,37 @@ export default function EducationScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const handleApplyAid = () => {
+    setIsAidModalVisible(true);
+  };
+
+  const submitAidApplication = () => {
+    if (!aidForm.studentName || !aidForm.contact || !aidForm.institutionName) {
+      Alert.alert(t('error'), t('fillAllFieldsReport'));
+      return;
+    }
+
+    Alert.alert(
+      t('success'),
+      t('educationAidSuccessMsg'),
+      [{ 
+        text: t('ok'), 
+        onPress: () => {
+          setIsAidModalVisible(false);
+          setAidForm({
+            studentName: '',
+            parentName: '',
+            institutionName: '',
+            currentClass: '',
+            annualIncome: '',
+            purpose: '',
+            contact: '',
+          });
+        } 
+      }]
+    );
   };
 
   const services = [
@@ -158,6 +202,24 @@ export default function EducationScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          
+          {/* Education Aid Call to Action */}
+          <TouchableOpacity 
+            style={styles.aidButton}
+            onPress={handleApplyAid}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#F59E0B', '#D97706']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.aidButtonGradient}
+            >
+              <Ionicons name="sparkles" size={24} color="#fff" />
+              <Text style={styles.aidButtonText}>{t('applyForEducationAid')}</Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         {/* Programs */}
@@ -251,6 +313,99 @@ export default function EducationScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      <Modal
+        visible={isAidModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsAidModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('applyForEducationAidTitle')}</Text>
+              <TouchableOpacity onPress={() => setIsAidModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.formContent}>
+              <Text style={styles.inputLabel}>{t('studentName')} *</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.studentName}
+                onChangeText={(text) => setAidForm({ ...aidForm, studentName: text })}
+                placeholder={t('studentName')}
+                placeholderTextColor="#9CA3AF"
+              />
+
+              <Text style={styles.inputLabel}>{t('parentName')}</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.parentName}
+                onChangeText={(text) => setAidForm({ ...aidForm, parentName: text })}
+                placeholder={t('parentName')}
+                placeholderTextColor="#9CA3AF"
+              />
+
+              <Text style={styles.inputLabel}>{t('institutionName')} *</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.institutionName}
+                onChangeText={(text) => setAidForm({ ...aidForm, institutionName: text })}
+                placeholder={t('institutionName')}
+                placeholderTextColor="#9CA3AF"
+              />
+
+              <Text style={styles.inputLabel}>{t('currentClass')}</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.currentClass}
+                onChangeText={(text) => setAidForm({ ...aidForm, currentClass: text })}
+                placeholder={t('currentClass')}
+                placeholderTextColor="#9CA3AF"
+              />
+
+              <Text style={styles.inputLabel}>{t('annualIncome')}</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.annualIncome}
+                onChangeText={(text) => setAidForm({ ...aidForm, annualIncome: text })}
+                placeholder={t('annualIncome')}
+                placeholderTextColor="#9CA3AF"
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.inputLabel}>{t('contactNumber')} *</Text>
+              <TextInput
+                style={styles.input}
+                value={aidForm.contact}
+                onChangeText={(text) => setAidForm({ ...aidForm, contact: text })}
+                placeholder={t('contactNumber')}
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+              />
+
+              <Text style={styles.inputLabel}>{t('purposeOfAid')}</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={aidForm.purpose}
+                onChangeText={(text) => setAidForm({ ...aidForm, purpose: text })}
+                placeholder={t('purposeOfAid')}
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+              />
+
+              <TouchableOpacity style={[styles.applyButton, { marginTop: 12, paddingVertical: 14 }]} onPress={submitAidApplication}>
+                <Text style={styles.applyButtonText}>{t('applyNow')}</Text>
+              </TouchableOpacity>
+              
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -326,6 +481,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 20,
+  },
+  aidButton: {
+    width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  aidButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  aidButtonText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   serviceCard: {
     width: '48%',
@@ -487,5 +667,62 @@ const styles = StyleSheet.create({
   aiDescription: {
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.9)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    minHeight: '80%',
+    maxHeight: '90%',
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  formContent: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  submitButton: {
+    backgroundColor: '#F59E0B',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });

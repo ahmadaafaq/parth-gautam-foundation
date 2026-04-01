@@ -12,11 +12,42 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../../store/languageStore';
+import { useAuthStore } from '../../store/authStore';
+import * as Haptics from 'expo-haptics';
 
 export default function CommunityTabScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
+  const { user, addVolunteerPoints } = useAuthStore();
   const [activeTab, setActiveTab] = useState('volunteer'); // volunteer, events
+  const [joinedPrograms, setJoinedPrograms] = useState<number[]>([]);
+  const [rsvpEvents, setRsvpEvents] = useState<number[]>([]);
+
+  const handleJoin = (id: number) => {
+    if (!user) {
+      Alert.alert(t('errorTitle'), 'Please login to join as a volunteer');
+      return;
+    }
+    if (joinedPrograms.includes(id)) return;
+
+    addVolunteerPoints(10);
+    setJoinedPrograms([...joinedPrograms, id]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert(t('successTitle'), t('volunteeringSuccessMsg'));
+  };
+
+  const handleRSVP = (id: number) => {
+    if (!user) {
+      Alert.alert(t('errorTitle'), 'Please login to RSVP');
+      return;
+    }
+    if (rsvpEvents.includes(id)) return;
+
+    addVolunteerPoints(5);
+    setRsvpEvents([...rsvpEvents, id]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert(t('successTitle'), t('rsvpConfirmed'));
+  };
 
   const volunteerPrograms = [
     {
@@ -130,10 +161,13 @@ export default function CommunityTabScreen() {
                   </View>
                 </View>
                 <TouchableOpacity
-                  style={styles.joinButton}
-                  onPress={() => Alert.alert(t('successTitle'), t('joinedProgramSuccess'))}
+                  style={[styles.joinButton, joinedPrograms.includes(program.id) && styles.joinButtonDisabled]}
+                  onPress={() => handleJoin(program.id)}
+                  disabled={joinedPrograms.includes(program.id)}
                 >
-                  <Text style={styles.joinButtonText}>{t('join')}</Text>
+                  <Text style={styles.joinButtonText}>
+                    {joinedPrograms.includes(program.id) ? t('joined') : t('join')}
+                  </Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -149,8 +183,14 @@ export default function CommunityTabScreen() {
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventHeader}>
                   <Text style={styles.eventTitle}>{event.title}</Text>
-                  <TouchableOpacity style={styles.rsvpButton} onPress={() => Alert.alert(t('rsvpConfirmed'))}>
-                    <Text style={styles.rsvpButtonText}>{t('rsvp')}</Text>
+                  <TouchableOpacity 
+                    style={[styles.rsvpButton, rsvpEvents.includes(event.id) && styles.rsvpButtonDisabled]} 
+                    onPress={() => handleRSVP(event.id)}
+                    disabled={rsvpEvents.includes(event.id)}
+                  >
+                    <Text style={[styles.rsvpButtonText, rsvpEvents.includes(event.id) && { color: '#10B981' }]}>
+                      {rsvpEvents.includes(event.id) ? t('joined') : t('join')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.eventMetaContainer}>
@@ -305,6 +345,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  joinButtonDisabled: {
+    backgroundColor: '#10B981',
+    opacity: 0.8,
+  },
   eventCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -336,6 +380,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     marginLeft: 8,
+  },
+  rsvpButtonDisabled: {
+    backgroundColor: '#F0FDF4',
   },
   rsvpButtonText: {
     fontSize: 12,

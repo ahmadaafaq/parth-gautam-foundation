@@ -22,13 +22,14 @@ import { HealthCamp } from './index';
 
 export default function HealthCampDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { user } = useAuthStore();
+  const { user, addVolunteerPoints } = useAuthStore();
   const { t } = useLanguageStore();
   const router = useRouter();
   const [program, setProgram] = useState<HealthCamp | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [isVolunteering, setIsVolunteering] = useState(false);
 
   useEffect(() => {
     loadProgram();
@@ -91,11 +92,28 @@ export default function HealthCampDetailScreen() {
       }
       Alert.alert('Success', 'You have successfully registered for this health camp! We will send you a reminder before the event.');
     } catch (error: any) {
-        console.error('Error registering for health camp:', error);
-        Alert.alert('Error', error?.response?.data?.detail || 'Registration failed. Please try again.');
+      console.error('Error registering for health camp:', error);
+      Alert.alert('Error', error?.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
-        setRegistering(false);
+      setRegistering(false);
     }
+  };
+
+  const handleVolunteerJoin = () => {
+    if (!user) {
+      Alert.alert(t('errorTitle'), 'Please login to volunteer');
+      return;
+    }
+
+    if (isVolunteering) {
+      Alert.alert(t('info'), t('alreadyVolunteering'));
+      return;
+    }
+
+    addVolunteerPoints(20);
+    setIsVolunteering(true);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert(t('successTitle'), t('volunteeringSuccessMsg'));
   };
 
   if (loading) {
@@ -221,6 +239,8 @@ export default function HealthCampDetailScreen() {
             </View>
           )}
 
+
+
           <View style={styles.divider} />
 
           {/* About Section */}
@@ -240,6 +260,24 @@ export default function HealthCampDetailScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <SafeAreaView edges={['bottom']}>
+
+          <TouchableOpacity
+            style={[
+              styles.volunteerCardButton,
+              isVolunteering && styles.volunteerCardButtonDisabled
+            ]}
+            onPress={handleVolunteerJoin}
+          >
+            <Ionicons
+              name={isVolunteering ? "checkmark-circle" : "arrow-forward-circle"}
+              size={24}
+              color={isVolunteering ? '#10B981' : '#8B5CF6'}
+            />
+            <Text style={[styles.volunteerCardButtonText, isVolunteering && { color: '#10B981' }]}>
+              {isVolunteering ? t('joined') : t('joinAsVolunteer')}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.registerButton,
@@ -500,6 +538,63 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  volunteerCard: {
+    backgroundColor: '#F5F3FF',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    marginTop: 8,
+  },
+  volunteerCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 16,
+  },
+  volunteerIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: '#EDE9FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  volunteerTextContent: {
+    flex: 1,
+  },
+  volunteerCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  volunteerCardSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  volunteerCardButton: {
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+    borderColor: '#DDD6FE',
+  },
+  volunteerCardButtonDisabled: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#DCFCE7',
+  },
+  volunteerCardButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#8B5CF6',
   },
   buttonRow: {
     flexDirection: 'row',

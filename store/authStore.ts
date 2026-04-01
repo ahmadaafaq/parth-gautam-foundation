@@ -22,9 +22,10 @@ interface AuthState {
   setUser: (user: User | null) => void;
   logout: () => void;
   loadUser: () => Promise<void>;
+  addVolunteerPoints: (points: number) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoaded: false,
@@ -55,6 +56,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       console.error('Error loading user:', error);
       set({ isLoaded: true }); // ← always set true even on error
+    }
+  },
+
+  addVolunteerPoints: (points: number) => {
+    const { user } = get();
+    if (user) {
+      const updatedUser = {
+        ...user,
+        volunteer_points: (user.volunteer_points || 0) + points,
+        programs_attended: (user.programs_attended || 0) + 1,
+      };
+      AsyncStorage.setItem('user', JSON.stringify(updatedUser)).catch(console.error);
+      set({ user: updatedUser });
     }
   },
 }));
