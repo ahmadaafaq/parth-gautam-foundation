@@ -9,67 +9,19 @@ import {
   Image,
   FlatList,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
+import { Linking, Alert } from 'react-native';
+import { hospitalAPI } from '../utils/api';
 
-// ─── Mock Doctors ─────────────────────────────────────────────────────────────
-const DOCTORS = [
-  {
-    id: '1',
-    name: 'Dr. Anjali Sharma',
-    specialization: 'General Physician',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '12 years',
-    rating: 4.8,
-    avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?q=80&w=200&h=200&auto=format&fit=crop',
-    online: true,
-  },
-  {
-    id: '2',
-    name: 'Dr. Rakesh Gupta',
-    specialization: 'Cardiologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '18 years',
-    rating: 4.9,
-    avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=200&h=200&auto=format&fit=crop',
-    online: false,
-  },
-  {
-    id: '3',
-    name: 'Dr. Priya Verma',
-    specialization: 'Paediatrician',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '9 years',
-    rating: 4.7,
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?q=80&w=200&h=200&auto=format&fit=crop',
-    online: true,
-  },
-  {
-    id: '4',
-    name: 'Dr. Meena Tiwari',
-    specialization: 'Gynaecologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '15 years',
-    rating: 4.8,
-    avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200&h=200&auto=format&fit=crop',
-    online: true,
-  },
-  {
-    id: '5',
-    name: 'Dr. Amit Saxena',
-    specialization: 'Dermatologist',
-    hospital: 'Mission Hospital, Civil Lines, Bareilly',
-    experience: '10 years',
-    rating: 4.6,
-    avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=200&h=200&auto=format&fit=crop',
-    online: false,
-  },
-];
-
+// ─── Constants ────────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
   '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
@@ -81,24 +33,63 @@ function getNextDays(count: number) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const today = new Date();
+
+  // Force IST (UTC+5:30) regardless of device local timezone
+  const now = new Date();
+  const istMillis = now.getTime() + (5.5 * 3600000);
+  const istToday = new Date(istMillis);
+
   for (let i = 0; i < count; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const d = new Date(istToday);
+    d.setUTCDate(istToday.getUTCDate() + i);
+
+    // Extract IST components using UTC getters on the shifted object
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const localKey = `${year}-${month}-${day}`;
+
     days.push({
-      key: d.toISOString().split('T')[0],
-      day: dayNames[d.getDay()],
-      date: d.getDate(),
-      month: monthNames[d.getMonth()],
+      key: localKey,
+      day: dayNames[d.getUTCDay()],
+      date: d.getUTCDate(),
+      month: monthNames[d.getUTCMonth()],
     });
   }
   return days;
 }
 
-const DATES = getNextDays(7);
+const getInitialAge = (group?: string) => {
+  if (!group) return '25';
+  const normalizedGroup = group.replace('–', '-');
+  if (normalizedGroup.includes('18')) return '21';
+  if (normalizedGroup.includes('25')) return '30';
+  if (normalizedGroup.includes('35')) return '40';
+  if (normalizedGroup.includes('45')) return '52';
+  if (normalizedGroup.includes('60')) return '65';
+  return '25';
+};
+
+
+
+
+// Top-level constant was removed to prevent staleness across midnight
+
+
+// ─── Doctor Type ─────────────────────────────────────────────────────────────
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  hospital: string;
+  experience: string;
+  rating: number;
+  avatar: string;
+  online: boolean;
+}
 
 // ─── Mock Video Call Screen ───────────────────────────────────────────────────
-function VideoCallScreen({ doctor, onEnd }: { doctor: typeof DOCTORS[0]; onEnd: () => void }) {
+function VideoCallScreen({ doctor, onEnd }: { doctor: Doctor; onEnd: () => void }) {
   const [callTime, setCallTime] = useState(0);
   const [muted, setMuted] = useState(false);
   const [camOff, setCamOff] = useState(false);
@@ -194,18 +185,79 @@ function VideoCallScreen({ doctor, onEnd }: { doctor: typeof DOCTORS[0]; onEnd: 
 export default function TeleconsultationScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
+  const { user } = useAuthStore();
 
+  // ── State ──
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
   // Step: 'list' | 'mode' | 'schedule' | 'videocall'
   const [step, setStep] = useState<'list' | 'mode' | 'schedule' | 'videocall'>('list');
-  const [selectedDoctor, setSelectedDoctor] = useState<typeof DOCTORS[0] | null>(null);
-  const [selectedDate, setSelectedDate] = useState(DATES[0].key);
+  // ── Date Generation ──
+  const freshDates = getNextDays(7);
+
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [selectedDate, setSelectedDate] = useState(freshDates[0].key);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [userAppointments, setUserAppointments] = useState<any[]>([]);
+  const [bookedAppointment, setBookedAppointment] = useState<any>(null);
+  const [fetchingAppts, setFetchingAppts] = useState(false);
+  const [booking, setBooking] = useState(false);
+
+  // ── Sync Selected Date (Defensive Fix for midnight staleness) ──
+  useEffect(() => {
+    // If current selectedDate is NOT in the new freshDates array, reset it to TODAY
+    if (freshDates.length > 0 && !freshDates.some(d => d.key === selectedDate)) {
+      setSelectedDate(freshDates[0].key);
+    }
+  }, [freshDates, selectedDate]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showCallEnded, setShowCallEnded] = useState(false);
 
-  const handleSelectDoctor = (doctor: typeof DOCTORS[0]) => {
+  useEffect(() => {
+    fetchDoctors();
+    if (user) {
+      fetchUserAppointments();
+    }
+  }, [user]);
+
+  const fetchUserAppointments = async () => {
+    try {
+      setFetchingAppts(true);
+      const data = await hospitalAPI.getMyAppointments(user!.citizen_id);
+      setUserAppointments(data || []);
+    } catch (err) {
+      console.error('Error fetching user appointments:', err);
+    } finally {
+      setFetchingAppts(false);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    try {
+      setLoading(true);
+      const data = await hospitalAPI.getDoctors();
+      const mapped: Doctor[] = data.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        specialization: d.specialties?.name || d.specialty || 'General Physician',
+        hospital: d.hospital || 'Mission Hospital, Civil Lines, Bareilly',
+        experience: d.experience || '10+ years',
+        rating: d.rating || 4.8,
+        avatar: d.image || d.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=10B981&color=fff`,
+        online: d.online ?? true,
+      }));
+
+      setDoctors(mapped);
+    } catch (err) {
+      console.error('Error fetching doctors:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectDoctor = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
-    setSelectedDate(DATES[0].key);
+    setSelectedDate(freshDates[0].key);
     setSelectedSlot(null);
     setStep('schedule');
   };
@@ -213,14 +265,57 @@ export default function TeleconsultationScreen() {
   const handleInstant = () => setStep('videocall');
   const handleSchedule = () => setStep('schedule');
 
-  const handleBook = () => {
-    if (!selectedSlot) return;
-    setShowConfirm(true);
+  const handleBook = async () => {
+    if (!selectedSlot || !selectedDoctor || !user) return;
+
+    try {
+      setBooking(true);
+      // Small artificial delay for visual feedback, consistent with premium feel
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const result = await hospitalAPI.bookOpdOnline({
+        patientName: user.name.trim(),
+        citizenId: user.citizen_id,
+        phone: user.phone.trim(),
+        age: getInitialAge(user.age_group),
+        gender: (user as any).gender || 'Others',
+        address: (user as any).address || (user.ward ? `Ward: ${user.ward}` : 'PGF Area'),
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        specialty: selectedDoctor.specialization,
+        date: selectedDate,
+        time: selectedSlot,
+        appointmentType: 'Online Consultation',
+        notes: `Online appointment`
+      });
+
+      if (!result.success) throw new Error(result.message || 'Booking failed');
+
+      setBookedAppointment(result.appointment);
+      fetchUserAppointments(); // Refresh list
+      setShowConfirm(true);
+    } catch (err: any) {
+      console.error('Error booking appointment:', err);
+      const serverError = err?.response?.data;
+      const msg = serverError?.message || err.message || 'Failed to book appointment. Please try again.';
+      const detail = serverError?.details ? `\n\nDetails: ${serverError.details}` : '';
+      Alert.alert('Booking Failed', msg + detail);
+    } finally {
+      setBooking(false);
+    }
+  };
+
+  const handleJoinCall = (appointmentId: string) => {
+    const url = `https://meet.jit.si/ParthGautamFoundation-${appointmentId}`;
+    Linking.openURL(url).catch(err => {
+      console.error('Error opening Jitsi URL:', err);
+      Alert.alert('Error', 'Could not open video call link.');
+    });
   };
 
   const handleConfirmDone = () => {
     setShowConfirm(false);
-    router.back();
+    router.replace('/(tabs)');
   };
 
   const handleEndCall = () => {
@@ -229,7 +324,7 @@ export default function TeleconsultationScreen() {
 
   const handleCallEndedDone = () => {
     setShowCallEnded(false);
-    router.back();
+    router.replace('/(tabs)');
   };
 
   // ── Video Call ──
@@ -276,53 +371,97 @@ export default function TeleconsultationScreen() {
           </View>
         </LinearGradient>
 
-        <FlatList
-          data={DOCTORS}
-          keyExtractor={(d) => d.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item: doctor }) => (
-            <TouchableOpacity
-              style={styles.doctorCard}
-              onPress={() => handleSelectDoctor(doctor)}
-              activeOpacity={0.85}
-            >
-              <Image source={{ uri: doctor.avatar }} style={styles.avatar} />
-              <View style={styles.doctorInfo}>
-                <View style={styles.doctorNameRow}>
-                  <Text style={styles.doctorName}>{doctor.name}</Text>
-                  <View style={[styles.onlineBadge, !doctor.online && styles.offlineBadge]}>
-                    <View style={[styles.onlineDot, !doctor.online && styles.offlineDot]} />
-                    <Text style={[styles.onlineText, !doctor.online && styles.offlineText]}>
-                      {doctor.online ? t('online') : t('offline')}
-                    </Text>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={{ marginTop: 10, color: '#666' }}>{t('loading')}...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={doctors}
+            keyExtractor={(d) => d.id}
+            contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item: doctor }) => (
+              <TouchableOpacity
+                style={styles.doctorCard}
+                onPress={() => handleSelectDoctor(doctor)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: doctor.avatar }}
+                  style={styles.avatar}
+                  defaultSource={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=10B981&color=fff` }}
+                />
+                <View style={styles.doctorInfo}>
+                  <View style={styles.doctorNameRow}>
+                    <Text style={styles.doctorName}>{doctor.name}</Text>
+                    <View style={[styles.onlineBadge, !doctor.online && styles.offlineBadge]}>
+                      <View style={[styles.onlineDot, !doctor.online && styles.offlineDot]} />
+                      <Text style={[styles.onlineText, !doctor.online && styles.offlineText]}>
+                        {doctor.online ? t('online') : t('offline')}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.specialization}>{doctor.specialization}</Text>
+                  <View style={styles.hospitalRow}>
+                    <Ionicons name="location-outline" size={12} color="#6B7280" />
+                    <Text style={styles.hospitalText} numberOfLines={1}>{doctor.hospital}</Text>
+                  </View>
+                  <View style={styles.doctorMeta}>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="star" size={13} color="#F59E0B" />
+                      <Text style={styles.metaText}>{doctor.rating}</Text>
+                    </View>
+                    <View style={styles.metaDot} />
+                    <Text style={styles.metaText}>{doctor.experience}</Text>
                   </View>
                 </View>
-                <Text style={styles.specialization}>{doctor.specialization}</Text>
-                <View style={styles.hospitalRow}>
-                  <Ionicons name="location-outline" size={12} color="#6B7280" />
-                  <Text style={styles.hospitalText} numberOfLines={1}>{doctor.hospital}</Text>
-                </View>
-                <View style={styles.doctorMeta}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="star" size={13} color="#F59E0B" />
-                    <Text style={styles.metaText}>{doctor.rating}</Text>
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
+              </TouchableOpacity>
+            )}
+            ListHeaderComponent={() => (
+              <>
+                {userAppointments.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{t('myUpcomingConsultations') || 'Upcoming Consultations'}</Text>
+                    {userAppointments.map((appt) => {
+                      // Always enable Join button for current time being
+                      const enabled = true; 
+                      return (
+                        <View key={appt.id} style={styles.myApptCard}>
+                          <View style={styles.myApptInfo}>
+                            <Text style={styles.myApptDoctor}>{appt.doctor}</Text>
+                            <Text style={styles.myApptTime}>{appt.date} | {appt.time}</Text>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.joinBtn}
+                            onPress={() => handleJoinCall(appt.id)}
+                          >
+                            <Ionicons name="videocam" size={18} color="#fff" />
+                            <Text style={styles.joinBtnText}>Join Video</Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
                   </View>
-                  <View style={styles.metaDot} />
-                  <Text style={styles.metaText}>{doctor.experience}</Text>
+                )}
+                <View style={[styles.section, { marginTop: 10 }]}>
+                  <Text style={styles.sectionTitle}>{t('selectDoctorToBook') || 'Book New Consultation'}</Text>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={{ alignSelf: 'center' }} />
-            </TouchableOpacity>
-          )}
-        />
+              </>
+            )}
+          />
+        )}
       </SafeAreaView>
     );
   }
 
 
+
+
   // ── Schedule Form ──
-  const selectedDateObj = DATES.find(d => d.key === selectedDate);
+  const selectedDateObj = freshDates.find(d => d.key === selectedDate);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -349,7 +488,7 @@ export default function TeleconsultationScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('selectDate')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
-            {DATES.map((d) => (
+            {freshDates.map((d) => (
               <TouchableOpacity
                 key={d.key}
                 style={[styles.dateChip, selectedDate === d.key && styles.dateChipActive]}
@@ -362,6 +501,7 @@ export default function TeleconsultationScreen() {
             ))}
           </ScrollView>
         </View>
+
 
         {/* Time Slots */}
         <View style={styles.section}>
@@ -387,17 +527,25 @@ export default function TeleconsultationScreen() {
       {/* Book Button */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={[styles.bookBtn, !selectedSlot && styles.bookBtnDisabled]}
+          style={[styles.bookBtn, (!selectedSlot || booking) && styles.bookBtnDisabled]}
           onPress={handleBook}
-          disabled={!selectedSlot}
+          disabled={!selectedSlot || booking}
         >
           <LinearGradient
             colors={selectedSlot ? ['#10B981', '#059669'] : ['#D1D5DB', '#D1D5DB']}
             style={styles.bookBtnGradient}
           >
-            <Ionicons name="videocam-outline" size={20} color="#fff" />
+            {booking ? (
+              <ActivityIndicator color="#fff" size="small" animating={true} style={{ marginRight: 6 }} />
+            ) : (
+              <Ionicons name="videocam-outline" size={20} color="#fff" />
+            )}
             <Text style={styles.bookBtnText}>
-              {selectedSlot ? `${t('bookAppointmentEx')} ${selectedSlot}` : t('selectATimeSlot')}
+              {booking
+                ? 'Booking...'
+                : selectedSlot
+                  ? `${t('bookAppointmentEx')} ${selectedSlot}`
+                  : t('selectATimeSlot')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -418,13 +566,40 @@ export default function TeleconsultationScreen() {
               <ConfirmRow icon="videocam-outline" label={t('type')} value={t('onlineConsultation')} />
               <ConfirmRow
                 icon="calendar-outline"
-                label="Date"
+                label={t('date') || 'Date'}
                 value={`${selectedDateObj?.day}, ${selectedDateObj?.date} ${selectedDateObj?.month}`}
               />
-              <ConfirmRow icon="time-outline" label="Time" value={selectedSlot!} />
+              <ConfirmRow icon="time-outline" label={t('time') || 'Time'} value={selectedSlot!} />
+              {bookedAppointment && (
+                <ConfirmRow
+                  icon="barcode-outline"
+                  label={t('id') || 'Appointment ID'}
+                  value={bookedAppointment.id}
+                />
+              )}
             </View>
-            <TouchableOpacity style={[styles.confirmDoneBtn, { backgroundColor: '#10B981' }]} onPress={handleConfirmDone}>
-              <Text style={styles.confirmDoneText}>Done</Text>
+            <TouchableOpacity
+              style={[styles.confirmDoneBtn, { backgroundColor: '#10B981', marginBottom: 12 }]}
+              onPress={() => {
+                setShowConfirm(false);
+                // In a real app we'd redirect to "My Appointments", 
+                // but for now let's just go back to home.
+                router.replace('/(tabs)');
+              }}
+            >
+              <Text style={styles.confirmDoneText}>{t('success') || 'Done'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.confirmDoneBtn, { backgroundColor: '#4F46E5' }]}
+              onPress={() => {
+                // Find the just-created appointment if we had the ID stored in state
+                // For simplicity, we can pass a generic join or just close
+                setShowConfirm(false);
+                router.replace('/(tabs)');
+              }}
+            >
+              <Text style={styles.confirmDoneText}>{t('home') || 'Go to Home'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -600,6 +775,22 @@ const styles = StyleSheet.create({
   confirmRowValue: { fontSize: 13, fontWeight: '600', color: '#1F2937', flex: 1, paddingTop: 5 },
   confirmDoneBtn: { backgroundColor: '#EF4444', paddingVertical: 14, paddingHorizontal: 48, borderRadius: 14 },
   confirmDoneText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  myApptCard: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderColor: '#E5E7EB',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  },
+  myApptInfo: { flex: 1 },
+  myApptDoctor: { fontSize: 15, fontWeight: '700', color: '#1F2937', marginBottom: 4 },
+  myApptTime: { fontSize: 12, color: '#6B7280' },
+  joinBtn: {
+    backgroundColor: '#4F46E5', flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10,
+  },
+  joinBtnDisabled: { backgroundColor: '#9CA3AF', opacity: 0.8 },
+  joinBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });
 
 // ─── Video Call Styles ────────────────────────────────────────────────────────

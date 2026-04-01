@@ -281,6 +281,7 @@ export const hospitalAPI = {
     medicalReports?: string[];
     prescriptions?: string[];
     imaging?: string[];
+    appointmentType?: string;
   }): Promise<{ success: boolean; message: string; appointment: any }> => {
     const res = await hospitalAxios.post('/api/opd-online', data, {
       headers: { 'x-api-key': OPD_API_KEY },

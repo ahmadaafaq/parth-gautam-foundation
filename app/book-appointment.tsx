@@ -33,21 +33,37 @@ function getNextDays(count: number) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const today = new Date();
+  
+  // Force IST (UTC+5:30) regardless of device local timezone
+  const now = new Date();
+  const istMillis = now.getTime() + (5.5 * 3600000);
+  const istToday = new Date(istMillis);
+
   for (let i = 0; i < count; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const d = new Date(istToday);
+    d.setUTCDate(istToday.getUTCDate() + i);
+    
+    // Extract IST components using UTC getters on the shifted object
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const localKey = `${year}-${month}-${day}`;
+
     days.push({
-      key: d.toISOString().split('T')[0],
-      day: dayNames[d.getDay()],
-      date: d.getDate(),
-      month: monthNames[d.getMonth()],
+      key: localKey,
+      day: dayNames[d.getUTCDay()],
+      date: d.getUTCDate(),
+      month: monthNames[d.getUTCMonth()],
     });
   }
   return days;
 }
 
-const DATES = getNextDays(7);
+
+
+
+// Top-level constant was removed to prevent staleness across midnight
+
 
 // ─── Doctor type ─────────────────────────────────────────────────────────────
 interface Doctor {
@@ -71,7 +87,7 @@ function mapApiDoctor(d: any): Doctor {
     hospital: d.hospital || 'Mission Hospital, Civil Lines, Bareilly',
     experience: d.experience || '',
     rating: d.rating || 4.8,
-    avatar: d.avatar || d.photo_url ||
+    avatar: d.image || d.avatar || d.photo_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=EF4444&color=fff&size=128`,
     available: d.is_active !== false,
     specialty_id: d.specialty_id,
@@ -104,9 +120,20 @@ export default function BookAppointmentScreen() {
     return '25';
   };
 
+  // ── Date Generation ──
+  const freshDates = getNextDays(7);
+
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  const [selectedDate, setSelectedDate] = useState(DATES[0].key);
+  const [selectedDate, setSelectedDate] = useState(freshDates[0].key);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+
+  // ── Sync Selected Date (Defensive Fix for midnight staleness) ──
+  useEffect(() => {
+    // If current selectedDate is NOT in the new freshDates array, reset it to TODAY
+    if (freshDates.length > 0 && !freshDates.some(d => d.key === selectedDate)) {
+      setSelectedDate(freshDates[0].key);
+    }
+  }, [freshDates, selectedDate]);
 
   // These stay in state to be sent to the API, but hidden from UI
   const [patientName, setPatientName] = useState(user?.name || '');
@@ -171,7 +198,7 @@ export default function BookAppointmentScreen() {
   const handleSelectDoctor = (doctor: Doctor) => {
     if (!doctor.available) return;
     setSelectedDoctor(doctor);
-    setSelectedDate(DATES[0].key);
+    setSelectedDate(freshDates[0].key);
     setSelectedSlot(null);
     setPatientName(user?.name || '');
     setPatientPhone(user?.phone || '');
@@ -334,7 +361,7 @@ export default function BookAppointmentScreen() {
   }
 
   // ── Booking Form Screen ──
-  const selectedDateObj = DATES.find(d => d.key === selectedDate);
+  const selectedDateObj = freshDates.find(d => d.key === selectedDate);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -389,7 +416,7 @@ export default function BookAppointmentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('selectDate')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
-            {DATES.map((d) => (
+            {freshDates.map((d) => (
               <TouchableOpacity
                 key={d.key}
                 style={[styles.dateChip, selectedDate === d.key && styles.dateChipActive]}
@@ -402,6 +429,7 @@ export default function BookAppointmentScreen() {
             ))}
           </ScrollView>
         </View>
+
 
         {/* Time Slots */}
         <View style={styles.section}>
@@ -423,22 +451,22 @@ export default function BookAppointmentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('uploadDocuments')}</Text>
           <Text style={styles.docSubtitle}>{t('viewableByDoctorNote')}</Text>
-          
+
           <View style={styles.docTabs}>
-            <TouchableOpacity 
-              style={[styles.docTab, docTab === 'medical' && styles.docTabActive]} 
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'medical' && styles.docTabActive]}
               onPress={() => setDocTab('medical')}
             >
               <Text style={[styles.docTabText, docTab === 'medical' && styles.docTabTextActive]}>{t('medicalReport')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.docTab, docTab === 'prescription' && styles.docTabActive]} 
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'prescription' && styles.docTabActive]}
               onPress={() => setDocTab('prescription')}
             >
               <Text style={[styles.docTabText, docTab === 'prescription' && styles.docTabTextActive]}>{t('prescription')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.docTab, docTab === 'imaging' && styles.docTabActive]} 
+            <TouchableOpacity
+              style={[styles.docTab, docTab === 'imaging' && styles.docTabActive]}
               onPress={() => setDocTab('imaging')}
             >
               <Text style={[styles.docTabText, docTab === 'imaging' && styles.docTabTextActive]}>{t('imaging')}</Text>
@@ -711,52 +739,52 @@ const styles = StyleSheet.create({
 
   // Document Upload Styles
   docSubtitle: { fontSize: 12, color: '#6B7280', marginBottom: 12, marginTop: -8 },
-  docTabs: { 
-    flexDirection: 'row', 
-    backgroundColor: '#F3F4F6', 
-    borderRadius: 12, 
-    padding: 4, 
-    marginBottom: 12 
+  docTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12
   },
-  docTab: { 
-    flex: 1, 
-    paddingVertical: 8, 
-    alignItems: 'center', 
-    borderRadius: 8 
+  docTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8
   },
   docTabActive: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
   docTabText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
   docTabTextActive: { color: '#EF4444' },
-  docTabContent: { 
-    backgroundColor: '#fff', 
-    borderRadius: 12, 
-    padding: 12, 
-    borderWidth: 1, 
+  docTabContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
     borderColor: '#E5E7EB',
     minHeight: 100
   },
-  fileRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    backgroundColor: '#F9FAFB', 
-    padding: 10, 
-    borderRadius: 10, 
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 10,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#F3F4F6'
   },
   fileInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   fileName: { fontSize: 13, color: '#374151', flex: 1 },
-  addDocBtn: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    gap: 8, 
-    paddingVertical: 12, 
-    borderWidth: 2, 
-    borderColor: '#FEE2E2', 
-    borderStyle: 'dashed', 
+  addDocBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#FEE2E2',
+    borderStyle: 'dashed',
     borderRadius: 12,
     marginTop: 8
   },
