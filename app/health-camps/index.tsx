@@ -40,62 +40,35 @@ export interface HealthCamp {
 export default function HealthCampsScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
-  const mockHealthCamps: HealthCamp[] = [
-    {
-      id: 'hc1',
-      title: 'Free Mega Health Camp',
-      description: 'Comprehensive health checkup including blood tests, eye exam, and general physician consultation.',
-      category: 'General',
-      subcategory: 'Checkup',
-      location: 'Community Hall, Ward 1',
-      ward: 'Ward 1',
-      date: new Date(Date.now() + 86400000 * 2).toISOString(),
-      seats_available: 50,
-      image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
-      created_at: new Date().toISOString(),
-      is_active: true,
-      registrations_count: 120,
-      tags: ['Free', 'Checkup'],
-      contact_info: '9876543210',
-      latitude: 0,
-      longitude: 0,
-    },
-    {
-      id: 'hc2',
-      title: 'Eye Checkup Drive',
-      description: 'Free eye checkup and distribution of spectacles.',
-      category: 'Specialized',
-      subcategory: 'Eye',
-      location: 'City Hospital',
-      ward: 'Ward 3',
-      date: new Date(Date.now() + 86400000 * 5).toISOString(),
-      seats_available: 100,
-      image: 'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&w=800&q=80',
-      created_at: new Date().toISOString(),
-      is_active: true,
-      registrations_count: 45,
-      tags: ['Eye', 'Free'],
-      contact_info: '9876543211',
-      latitude: 0,
-      longitude: 0,
-    }
-  ];
 
-  const [programs, setPrograms] = useState<HealthCamp[]>(mockHealthCamps);
-  const [loading, setLoading] = useState(false);
+  const [programs, setPrograms] = useState<HealthCamp[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
+  const fetchPrograms = async () => {
+    try {
+      setLoading(true);
+      const data = await healthCampsAPI.getAll();
+      setPrograms(data || []);
+    } catch (error) {
+      console.error('Error fetching health camps:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setPrograms(mockHealthCamps);
+    fetchPrograms();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    await fetchPrograms();
+    setRefreshing(false);
   };
 
   // Derive unique categories from active programs

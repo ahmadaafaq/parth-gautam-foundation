@@ -37,50 +37,11 @@ export default function HealthCampDetailScreen() {
     }
   }, [id, user]);
 
-  const mockHealthCamps = [
-    {
-      id: 'hc1',
-      title: 'Free Mega Health Camp',
-      description: 'Comprehensive health checkup including blood tests, eye exam, and general physician consultation.',
-      category: 'General',
-      subcategory: 'Checkup',
-      location: 'Community Hall, Ward 1',
-      ward: 'Ward 1',
-      date: new Date(Date.now() + 86400000 * 2).toISOString(),
-      seats_available: 50,
-      image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
-      created_at: new Date().toISOString(),
-      is_active: true,
-      registrations_count: 120,
-      tags: ['Free', 'Checkup'],
-      contact_info: '9876543210',
-      latitude: 0,
-      longitude: 0,
-    },
-    {
-      id: 'hc2',
-      title: 'Eye Checkup Drive',
-      description: 'Free eye checkup and distribution of spectacles.',
-      category: 'Specialized',
-      subcategory: 'Eye',
-      location: 'City Hospital',
-      ward: 'Ward 3',
-      date: new Date(Date.now() + 86400000 * 5).toISOString(),
-      seats_available: 100,
-      image: 'https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&w=800&q=80',
-      created_at: new Date().toISOString(),
-      is_active: true,
-      registrations_count: 45,
-      tags: ['Eye', 'Free'],
-      contact_info: '9876543211',
-      latitude: 0,
-      longitude: 0,
-    }
-  ];
-
   const checkRegistrationStatus = async () => {
     try {
-      setRegistered(false);
+      if (!user || !user.id || !id) return;
+      const status = await healthCampRegistrationsAPI.checkStatus(id as string, user.id);
+      setRegistered(status.registered);
     } catch (error) {
       console.error('Error checking registration status:', error);
     }
@@ -88,7 +49,8 @@ export default function HealthCampDetailScreen() {
 
   const loadProgram = async () => {
     try {
-      const data = mockHealthCamps.find(c => c.id === id) || mockHealthCamps[0];
+      setLoading(true);
+      const data = await healthCampsAPI.getById(id as string);
       setProgram(data as HealthCamp);
     } catch (error) {
       console.error('Error loading health camp details:', error);
@@ -116,7 +78,8 @@ export default function HealthCampDetailScreen() {
     }
 
     setRegistering(true);
-    setTimeout(() => {
+    try {
+      await healthCampRegistrationsAPI.register({ camp_id: id as string, user_id: user.id });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRegistered(true);
       if (program) {
@@ -127,8 +90,12 @@ export default function HealthCampDetailScreen() {
         });
       }
       Alert.alert('Success', 'You have successfully registered for this health camp! We will send you a reminder before the event.');
-      setRegistering(false);
-    }, 1000);
+    } catch (error: any) {
+        console.error('Error registering for health camp:', error);
+        Alert.alert('Error', error?.response?.data?.detail || 'Registration failed. Please try again.');
+    } finally {
+        setRegistering(false);
+    }
   };
 
   if (loading) {

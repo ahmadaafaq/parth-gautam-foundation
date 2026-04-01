@@ -20,35 +20,26 @@ import healthcareBanner from '../assets/images/parth-side.png';
 export default function HealthcareScreen() {
   const router = useRouter();
   const { t } = useLanguageStore();
-  const mockPrograms = [
-    {
-      id: 'hc1',
-      title: 'Free Mega Health Camp',
-      location: 'Community Hall, Ward 1',
-      date: '10th Nov 2024',
-      seats_available: 50,
-      is_active: true
-    },
-    {
-      id: 'hc2',
-      title: 'Eye Checkup Drive',
-      location: 'City Hospital, Ward 3',
-      date: '15th Nov 2024',
-      seats_available: 100,
-      is_active: true
-    }
-  ];
-
-  const [programs, setPrograms] = useState<any[]>(mockPrograms);
+  const [programs, setPrograms] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  const fetchUpcomingCamps = async () => {
+    try {
+      const data = await healthCampsAPI.getAll();
+      setPrograms((data || []).slice(0, 3));
+    } catch (error) {
+      console.error('Error fetching health camps:', error);
+    }
+  };
+
   useEffect(() => {
-    setPrograms(mockPrograms);
+    fetchUpcomingCamps();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    await fetchUpcomingCamps();
+    setRefreshing(false);
   };
 
   const services = [
@@ -174,9 +165,9 @@ export default function HealthcareScreen() {
                   <View style={styles.programFooter}>
                     <View style={styles.dateContainer}>
                       <Ionicons name="calendar" size={14} color="#3B82F6" />
-                      <Text style={styles.dateText}>{program.date}</Text>
+                      <Text style={styles.dateText}>{new Date(program.date).toLocaleDateString()}</Text>
                     </View>
-                    {program.seats_available && (
+                    {program.seats_available !== null && program.seats_available !== undefined && (
                       <View style={styles.seatsContainer}>
                         <Ionicons name="people" size={14} color="#10B981" />
                         <Text style={styles.seatsText}>{program.seats_available} {t('seats')}</Text>

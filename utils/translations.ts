@@ -538,6 +538,17 @@ export const translations = {
     viewableByDoctorNote: 'ये दस्तावेज केवल आपके डॉक्टर को दिखाई देंगे',
     uploadingDocs: 'दस्तावेज अपलोड हो रहे हैं...',
     removeFile: 'हटाएं',
+    
+    // Health Summary Cards
+    medicalRecords: 'मेडिकल रिकॉर्ड',
+    appointmentsCard: 'अपॉइंटमेंट',
+    appointmentsDesc: 'अपनी विज़िट प्रबंधित करें',
+    prescriptionCard: 'पर्चा',
+    prescriptionDesc: 'सक्रिय दवाएं',
+    imagingCard: 'इमेजिंग',
+    imagingDesc: 'स्कैन और एक्स-रे',
+    reportsCard: 'मेडिकल रिपोर्ट',
+    reportsDesc: 'लैब टेस्ट के परिणाम',
   },
   en: {
     // Welcome Screen
@@ -1075,6 +1086,17 @@ export const translations = {
     viewableByDoctorNote: 'These documents will only be visible to your doctor',
     uploadingDocs: 'Uploading documents...',
     removeFile: 'Remove',
+    
+    // Health Summary Cards
+    medicalRecords: 'Medical Records',
+    appointmentsCard: 'Appointments',
+    appointmentsDesc: 'Manage your visits',
+    prescriptionCard: 'Prescription',
+    prescriptionDesc: 'Active medications',
+    imagingCard: 'Imaging',
+    imagingDesc: 'Scans & X-Rays',
+    reportsCard: 'Medical Reports',
+    reportsDesc: 'Lab test results',
   },
 };
 

@@ -211,13 +211,7 @@ export const seedAPI = {
 // In development: http://localhost:3000  (change port if needed)
 // In production:  set EXPO_PUBLIC_HOSPITAL_BASE_URL in your environment
 const HOSPITAL_BASE_URL =
-  process.env.EXPO_PUBLIC_HOSPITAL_BASE_URL ||
-  ((() => {
-    const host = typeof Constants !== 'undefined'
-      ? Constants.expoConfig?.hostUri?.split(':').shift()
-      : null;
-    return host ? `http://${host}:3000` : 'http://localhost:3000';
-  })());
+  'https://appointment-management-system-pink.vercel.app/';
 
 const OPD_API_KEY = 'pgf-opd-key-2026';
 
@@ -251,7 +245,7 @@ export const hospitalAPI = {
     formData.append('bucket', 'uploads');
 
     const res = await hospitalAxios.post('/api/opd-online/upload', formData, {
-      headers: { 
+      headers: {
         'x-api-key': OPD_API_KEY,
         'Content-Type': 'multipart/form-data',
       },
@@ -300,6 +294,38 @@ export const hospitalAPI = {
       params: { citizenId },
     });
     return res.data.appointments || [];
+  },
+
+  /**
+   * Fetch all appointments and associated prescriptions by citizen_id (UCCN)
+   */
+  getAppointmentsByCitizenId: async (citizenId: string): Promise<any[]> => {
+    const res = await hospitalAxios.get(`/api/appointments/uccn/${citizenId}`);
+    return res.data;
+  },
+
+  /**
+   * Fetch all imaging records by citizen_id (UCCN)
+   */
+  getImagingByCitizenId: async (citizenId: string): Promise<any[]> => {
+    const res = await hospitalAxios.get(`/api/imaging/uccn/${citizenId}`);
+    return res.data;
+  },
+
+  /**
+   * Fetch all medical records by citizen_id (UCCN)
+   */
+  getMedicalRecordsByCitizenId: async (citizenId: string): Promise<any[]> => {
+    const res = await hospitalAxios.get(`/api/medical-records/uccn/${citizenId}`);
+    return res.data;
+  },
+
+  /**
+   * Fetch all prescriptions by citizen_id (UCCN)
+   */
+  getPrescriptionsByCitizenId: async (citizenId: string): Promise<any[]> => {
+    const res = await hospitalAxios.get(`/api/prescriptions/uccn/${citizenId}`);
+    return res.data;
   },
 };
 

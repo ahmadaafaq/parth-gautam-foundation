@@ -60,6 +60,37 @@ export default function HealthSummaryScreen() {
 
   const tests = ['CBC', 'Lipid Panel', 'Thyroid', 'HbA1c', 'Vitamins', 'Kidney Panel'];
 
+  const summaryCards = [
+    {
+      id: 'appointments',
+      title: t('appointmentsCard'),
+      description: t('appointmentsDesc'),
+      icon: 'calendar',
+      color: '#3B82F6',
+    },
+    {
+      id: 'prescription',
+      title: t('prescriptionCard'),
+      description: t('prescriptionDesc'),
+      icon: 'medical',
+      color: '#10B981',
+    },
+    {
+      id: 'imaging',
+      title: t('imagingCard'),
+      description: t('imagingDesc'),
+      icon: 'images',
+      color: '#F59E0B',
+    },
+    {
+      id: 'reports',
+      title: t('reportsCard'),
+      description: t('reportsDesc'),
+      icon: 'document-text',
+      color: '#8B5CF6',
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -76,6 +107,38 @@ export default function HealthSummaryScreen() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
+
+          {/* Summary Cards */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('medicalRecords')}</Text>
+            <View style={styles.servicesGrid}>
+              {summaryCards.map((card) => (
+                <TouchableOpacity
+                  key={card.id}
+                  style={styles.serviceCard}
+                  onPress={() => {
+                    if (card.id === 'appointments') {
+                      router.push('/appointments' as any);
+                    } else if (card.id === 'imaging') {
+                      router.push('/imaging' as any);
+                    } else if (card.id === 'reports') {
+                      router.push('/medical-records' as any);
+                    } else if (card.id === 'prescription') {
+                      router.push('/prescriptions' as any);
+                    } else {
+                      Alert.alert(card.title, t('featureAvailableSoon'));
+                    }
+                  }}
+                >
+                  <View style={[styles.serviceIcon, { backgroundColor: card.color + '20' }]}>
+                    <Ionicons name={card.icon as any} size={28} color={card.color} />
+                  </View>
+                  <Text style={styles.serviceTitle}>{card.title}</Text>
+                  <Text style={styles.serviceDescription}>{card.description}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           {/* AI Loading */}
           {isGenerating && (
@@ -282,6 +345,43 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 10,
     marginTop: 8,
+  },
+
+  // Services Grid
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  serviceCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  serviceIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  serviceTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  serviceDescription: {
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 16,
   },
 
   // Cards
