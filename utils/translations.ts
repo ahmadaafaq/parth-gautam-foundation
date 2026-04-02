@@ -526,7 +526,7 @@ export const translations = {
     pgSurveyQ4_opt1: 'हाँ, बिल्कुल',
     pgSurveyQ4_opt2: 'नहीं, अभी नहीं',
     finishSurvey: 'सर्वेक्षण समाप्त करें',
-    
+
     // Document Upload
     uploadDocuments: 'दस्तावेज अपलोड करें',
     medicalReport: 'मेडिकल रिपोर्ट',
@@ -538,7 +538,7 @@ export const translations = {
     viewableByDoctorNote: 'ये दस्तावेज केवल आपके डॉक्टर को दिखाई देंगे',
     uploadingDocs: 'दस्तावेज अपलोड हो रहे हैं...',
     removeFile: 'हटाएं',
-    
+
     // Health Summary Cards
     medicalRecords: 'मेडिकल रिकॉर्ड',
     appointmentsCard: 'अपॉइंटमेंट',
@@ -1091,7 +1091,7 @@ export const translations = {
     pgSurveyQ4_opt1: 'Yes, absolutely',
     pgSurveyQ4_opt2: 'No, not now',
     finishSurvey: 'Finish Survey',
-    
+
     // Document Upload
     uploadDocuments: 'Upload Documents',
     medicalReport: 'Medical Report',
@@ -1103,7 +1103,7 @@ export const translations = {
     viewableByDoctorNote: 'These documents will only be visible to your doctor',
     uploadingDocs: 'Uploading documents...',
     removeFile: 'Remove',
-    
+
     // Health Summary Cards
     medicalRecords: 'Medical Records',
     appointmentsCard: 'Appointments',

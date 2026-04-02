@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
-import { hospitalAPI } from '../utils/api';
+import { hospitalAPI, HOSPITAL_BASE_URL } from '../utils/api';
 import * as DocumentPicker from 'expo-document-picker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ function getNextDays(count: number) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
+
   // Force IST (UTC+5:30) regardless of device local timezone
   const now = new Date();
   const istMillis = now.getTime() + (5.5 * 3600000);
@@ -38,7 +38,7 @@ function getNextDays(count: number) {
   for (let i = 0; i < count; i++) {
     const d = new Date(istToday);
     d.setUTCDate(istToday.getUTCDate() + i);
-    
+
     // Extract IST components using UTC getters on the shifted object
     const year = d.getUTCFullYear();
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -83,7 +83,7 @@ function mapApiDoctor(d: any): Doctor {
     hospital: d.hospital || 'Mission Hospital, Civil Lines, Bareilly',
     experience: d.experience || '',
     rating: d.rating || 4.8,
-    avatar: d.image || d.avatar || d.photo_url ||
+    avatar: d.image ? (d.image.startsWith('http') ? d.image : `${HOSPITAL_BASE_URL}${d.image.startsWith('/') ? '' : '/'}${d.image}`) : d.avatar || d.photo_url ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=EF4444&color=fff&size=128`,
     available: d.is_active !== false,
     specialty_id: d.specialty_id,
@@ -343,7 +343,10 @@ export default function BookAppointmentScreen() {
                 <Image
                   source={{ uri: doctor.avatar }}
                   style={styles.avatar}
-                  defaultSource={{ uri: `https://ui-avatars.com/api/?name=Doctor&background=EF4444&color=fff` }}
+                  defaultSource={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=EF4444&color=fff` }}
+                  onError={(e) => {
+                    console.warn(`[ImageLoadError] Failed to load avatar for ${doctor.name}:`, doctor.avatar);
+                  }}
                 />
                 <View style={styles.doctorInfo}>
                   <View style={styles.doctorNameRow}>

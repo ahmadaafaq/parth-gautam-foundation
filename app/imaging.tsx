@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,9 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
-import { hospitalAPI } from '../utils/api';
-
-const HOSPITAL_BASE_URL = 'https://appointment-management-system-pink.vercel.app';
+import { hospitalAPI, HOSPITAL_BASE_URL } from '../utils/api';
+import { Linking } from 'react-native';
 
 export default function ImagingScreen() {
   const router = useRouter();
@@ -24,6 +24,16 @@ export default function ImagingScreen() {
   const { user } = useAuthStore();
   const [imagingData, setImagingData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const handleViewFull = (url: string) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `${HOSPITAL_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    const authenticatedUrl = `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}apiKey=pgf-opd-key-2026`;
+    Linking.openURL(authenticatedUrl).catch(err => {
+      console.error('Error opening URL:', err);
+      Alert.alert('Error', 'Unable to open attachment.');
+    });
+  };
 
   useEffect(() => {
     fetchImaging();
@@ -66,20 +76,41 @@ export default function ImagingScreen() {
               </View>
             ) : imagingData.length > 0 ? (
               imagingData.map((img) => {
-                const imageUrl = img.thumbnail?.startsWith('http')
-                  ? img.thumbnail
-                  : `${HOSPITAL_BASE_URL}${img.thumbnail}`;
+                let thumb = img.thumbnail;
+                try {
+                  const parsed = JSON.parse(img.thumbnail || "[]");
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    thumb = parsed[0];
+                  }
+                } catch (e) {
+                  // Not a JSON array, use as is
+                }
+
+                const imageUrl = thumb?.startsWith('http')
+                  ? thumb
+                  : thumb ? `${HOSPITAL_BASE_URL}${thumb}` : '';
 
                 return (
                   <View key={img.id} style={styles.card}>
                     <Image
                       source={{
-                        uri: imageUrl,
-                        headers: { 'x-api-key': 'pgf-opd-key-2026' }
+                        uri: `${imageUrl}?apiKey=pgf-opd-key-2026`
                       }}
                       style={styles.thumbnail}
                       resizeMode="cover"
+                      onError={(e) => {
+                        console.warn(`[ImagingError] Failed to load image at: ${imageUrl}`, e.nativeEvent.error);
+                      }}
                     />
+                    <View style={styles.imageOverlay}>
+                      <TouchableOpacity
+                        style={styles.viewFullBtn}
+                        onPress={() => handleViewFull(thumb)}
+                      >
+                        <Text style={styles.viewFullText}>View Full</Text>
+                        <Ionicons name="open-outline" size={14} color="#fff" style={{ marginLeft: 4 }} />
+                      </TouchableOpacity>
+                    </View>
                     <View style={styles.cardContent}>
                       <View style={styles.cardHeader}>
                         <Text style={styles.studyType}>{img.study_type}</Text>
@@ -94,7 +125,7 @@ export default function ImagingScreen() {
                         <Ionicons name="body-outline" size={16} color="#6B7280" />
                         <Text style={styles.detailText}>{img.body_part} ({img.modality})</Text>
                       </View>
-                      
+
                       <View style={styles.detailsRow}>
                         <Ionicons name="calendar-outline" size={16} color="#6B7280" />
                         <Text style={styles.detailText}>{img.date} {img.month} {img.year}</Text>
@@ -104,7 +135,7 @@ export default function ImagingScreen() {
                         <Ionicons name="person-outline" size={16} color="#6B7280" />
                         <Text style={styles.detailText}>{img.doctor}</Text>
                       </View>
-                      
+
                       {img.id && (
                         <View style={[styles.detailsRow, { marginTop: 4 }]}>
                           <Ionicons name="barcode-outline" size={14} color="#9CA3AF" />
@@ -142,7 +173,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   content: { padding: 16 },
   imagingView: { paddingVertical: 8 },
-  
+
   card: {
     backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, overflow: 'hidden',
     borderWidth: 1, borderColor: '#F3F4F6',
@@ -155,6 +186,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   cardContent: { padding: 16 },
+  imageOverlay: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+  },
+  viewFullBtn: {
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewFullText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   studyType: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
   aiBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },

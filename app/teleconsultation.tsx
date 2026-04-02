@@ -19,7 +19,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { Linking, Alert, TextInput } from 'react-native';
-import { hospitalAPI } from '../utils/api';
+import { hospitalAPI, HOSPITAL_BASE_URL } from '../utils/api';
 import * as DocumentPicker from 'expo-document-picker';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ export default function TeleconsultationScreen() {
         hospital: d.hospital || 'Mission Hospital, Civil Lines, Bareilly',
         experience: d.experience || '10+ years',
         rating: d.rating || 4.8,
-        avatar: d.image || d.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=10B981&color=fff`,
+        avatar: d.image ? (d.image.startsWith('http') ? d.image : `${HOSPITAL_BASE_URL}${d.image.startsWith('/') ? '' : '/'}${d.image}`) : d.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=10B981&color=fff`,
         online: d.online ?? true,
       }));
 
@@ -327,7 +327,7 @@ export default function TeleconsultationScreen() {
 
     try {
       setBooking(true);
-      
+
       // 1. Upload Documents
       const uploadCategory = async (docs: DocumentPicker.DocumentPickerAsset[]) => {
         const urls: string[] = [];
@@ -470,6 +470,9 @@ export default function TeleconsultationScreen() {
                   source={{ uri: doctor.avatar }}
                   style={styles.avatar}
                   defaultSource={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=10B981&color=fff` }}
+                  onError={(e) => {
+                    console.warn(`[ImageLoadError] Failed to load avatar for ${doctor.name}:`, doctor.avatar);
+                  }}
                 />
                 <View style={styles.doctorInfo}>
                   <View style={styles.doctorNameRow}>
@@ -505,7 +508,7 @@ export default function TeleconsultationScreen() {
                     <Text style={styles.sectionTitle}>{t('myUpcomingConsultations') || 'Upcoming Consultations'}</Text>
                     {userAppointments.map((appt) => {
                       // Always enable Join button for current time being
-                      const enabled = true; 
+                      const enabled = true;
                       return (
                         <View key={appt.id} style={styles.myApptCard}>
                           <View style={styles.myApptInfo}>

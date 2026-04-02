@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,9 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
-import { hospitalAPI } from '../utils/api';
-
-const HOSPITAL_BASE_URL = 'https://appointment-management-system-pink.vercel.app';
+import { hospitalAPI, HOSPITAL_BASE_URL } from '../utils/api';
+import { Linking } from 'react-native';
 
 export default function MedicalRecordsScreen() {
   const router = useRouter();
@@ -24,6 +24,16 @@ export default function MedicalRecordsScreen() {
   const { user } = useAuthStore();
   const [recordsData, setRecordsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const handleViewFull = (url: string) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `${HOSPITAL_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    const authenticatedUrl = `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}apiKey=pgf-opd-key-2026`;
+    Linking.openURL(authenticatedUrl).catch(err => {
+      console.error('Error opening URL:', err);
+      Alert.alert('Error', 'Unable to open attachment.');
+    });
+  };
 
   useEffect(() => {
     fetchRecords();
@@ -66,20 +76,37 @@ export default function MedicalRecordsScreen() {
               </View>
             ) : recordsData.length > 0 ? (
               recordsData.map((record) => {
-                const imageUrl = record.attachment_url?.startsWith('http')
-                  ? record.attachment_url
-                  : `${HOSPITAL_BASE_URL}${record.attachment_url}`;
+                let attachment = record.attachment_url;
+                try {
+                  const parsed = JSON.parse(record.attachment_url || "[]");
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    attachment = parsed[0];
+                  }
+                } catch (e) {
+                  // Not JSON
+                }
+
+                const imageUrl = attachment?.startsWith('http')
+                  ? attachment
+                  : attachment ? `${HOSPITAL_BASE_URL}${attachment}` : '';
+
+                const isImage = attachment && (
+                  record.attachment_type?.startsWith('image/') ||
+                  attachment.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+                );
 
                 return (
                   <View key={record.id} style={styles.card}>
-                    {record.attachment_url && record.attachment_type === 'image/jpeg' ? (
+                    {attachment && isImage ? (
                       <Image
-                        source={{ 
-                          uri: imageUrl,
-                          headers: { 'x-api-key': 'pgf-opd-key-2026' } 
+                        source={{
+                          uri: `${imageUrl}?apiKey=pgf-opd-key-2026`
                         }}
                         style={styles.thumbnail}
                         resizeMode="cover"
+                        onError={(e) => {
+                          console.warn(`[MedicalRecordImageError] Failed to load image at: ${imageUrl}`, e.nativeEvent.error);
+                        }}
                       />
                     ) : (
                       <View style={[styles.thumbnail, styles.noImage]}>
@@ -97,7 +124,7 @@ export default function MedicalRecordsScreen() {
                       </View>
 
                       <Text style={styles.summaryText}>{record.summary}</Text>
-                      
+
                       <View style={styles.separator} />
 
                       <View style={styles.detailsRow}>
@@ -109,12 +136,22 @@ export default function MedicalRecordsScreen() {
                         <Ionicons name="person-outline" size={16} color="#6B7280" />
                         <Text style={styles.detailText}>{record.doctor}</Text>
                       </View>
-                      
+
                       {record.id && (
                         <View style={[styles.detailsRow, { marginTop: 4 }]}>
                           <Ionicons name="barcode-outline" size={14} color="#9CA3AF" />
                           <Text style={[styles.detailText, { fontSize: 12, color: '#9CA3AF' }]}>{record.id}</Text>
                         </View>
+                      )}
+
+                      {attachment && (
+                        <TouchableOpacity
+                          style={styles.fullViewRow}
+                          onPress={() => handleViewFull(attachment)}
+                        >
+                          <Ionicons name="open-outline" size={18} color="#8B5CF6" />
+                          <Text style={styles.fullViewText}>View Full Document</Text>
+                        </TouchableOpacity>
                       )}
                     </View>
                   </View>
@@ -147,7 +184,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   content: { padding: 16 },
   recordsView: { paddingVertical: 8 },
-  
+
   card: {
     backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, overflow: 'hidden',
     borderWidth: 1, borderColor: '#F3F4F6',
@@ -173,6 +210,21 @@ const styles = StyleSheet.create({
   separator: { height: 1, backgroundColor: '#E5E7EB', marginBottom: 12 },
   detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   detailText: { fontSize: 14, color: '#4B5563', fontWeight: '500' },
+
+  fullViewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    gap: 8,
+  },
+  fullViewText: {
+    color: '#8B5CF6',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 
   centerBox: { padding: 40, alignItems: 'center' },
   loadingText: { marginTop: 12, color: '#6B7280', fontSize: 14 },

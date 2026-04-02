@@ -207,11 +207,18 @@ export const seedAPI = {
 };
 
 // ─── Hospital (Doctor Appointment System) API ────────────────────────────────
-// Base URL for the doctor-appointment-management Next.js app.
-// In development: http://localhost:3000  (change port if needed)
-// In production:  set EXPO_PUBLIC_HOSPITAL_BASE_URL in your environment
-const HOSPITAL_BASE_URL =
-  'https://appointment-management-system-pink.vercel.app/';
+const getHospitalBaseUrl = () => {
+  if (__DEV__) {
+    const host = Constants.expoConfig?.hostUri?.split(':').shift();
+    if (host) {
+      return `http://${host}:3000`;
+    }
+    return "http://localhost:3000";
+  }
+  return 'https://appointment-management-system-pink.vercel.app';
+};
+
+export const HOSPITAL_BASE_URL = getHospitalBaseUrl();
 
 const OPD_API_KEY = 'pgf-opd-key-2026';
 

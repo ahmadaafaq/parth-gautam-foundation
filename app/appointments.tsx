@@ -73,7 +73,7 @@ export default function AppointmentsScreen() {
                       <Text style={[styles.apptStatusText, { color: appt.status === 'Completed' ? '#059669' : '#0284C7' }]}>{appt.status}</Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.apptDetails}>
                     <View style={styles.apptDetailItem}>
                       <Ionicons name="calendar-outline" size={16} color="#4B5563" />
@@ -95,8 +95,8 @@ export default function AppointmentsScreen() {
                       <View style={styles.medicationsList}>
                         {(appt.prescriptions.medications || []).map((med: any, idx: number) => (
                           <View key={idx} style={styles.medicationRow}>
-                            <Ionicons name="disc" size={8} color="#6B7280" style={{marginTop: 6, marginRight: 6}} />
-                            <View style={{flex: 1}}>
+                            <Ionicons name="disc" size={8} color="#6B7280" style={{ marginTop: 6, marginRight: 6 }} />
+                            <View style={{ flex: 1 }}>
                               <Text style={styles.medicationName}>{med.medication}</Text>
                               <Text style={styles.medicationDosage}>Dosage: {med.dosage}  |  Qty: {med.quantity}</Text>
                             </View>
