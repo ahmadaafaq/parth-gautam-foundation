@@ -35,7 +35,7 @@ export default function PrescriptionsScreen() {
     const authenticatedUrl = `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}apiKey=pgf-opd-key-2026`;
     Linking.openURL(authenticatedUrl).catch(err => {
       console.error('Error opening URL:', err);
-      Alert.alert('Error', 'Unable to open attachment.');
+      Alert.alert(t('error'), t('unableToOpenAttachment'));
     });
   };
 
@@ -95,7 +95,7 @@ export default function PrescriptionsScreen() {
             {loading ? (
               <View style={styles.centerBox}>
                 <ActivityIndicator size="large" color="#10B981" />
-                <Text style={styles.loadingText}>Loading prescriptions...</Text>
+                <Text style={styles.loadingText}>{t('loadingPrescriptions')}</Text>
               </View>
             ) : prescriptionsData.length > 0 ? (
               prescriptionsData.map((rx) => {
@@ -117,21 +117,21 @@ export default function PrescriptionsScreen() {
                   <View key={rx.id} style={styles.card}>
                     <View style={styles.cardHeader}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.doctorName}>{rx.doctor_name || 'Dr. Not Specified'}</Text>
+                        <Text style={styles.doctorName}>{rx.doctor_name || t('doctorNotSpecified')}</Text>
                         <View style={styles.dateRow}>
                           <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-                          <Text style={styles.dateText}>Issued: {rx.issued}</Text>
+                          <Text style={styles.dateText}>{t('issued')}: {rx.issued}</Text>
                         </View>
                       </View>
                       <View style={[styles.statusBadge, { backgroundColor: rx.status === 'Active' ? '#D1FAE5' : '#F3F4F6' }]}>
                         <Text style={[styles.statusBadgeText, { color: rx.status === 'Active' ? '#059669' : '#6B7280' }]}>
-                          {rx.status || 'Active'}
+                          {rx.status === 'Active' ? t('active') : (rx.status || t('active'))}
                         </Text>
                       </View>
                     </View>
 
                     {/* Medications List (for structured records) */}
-                    {!rx.isUploadedFile && (
+                    {/* {!rx.isUploadedFile && (
                       <View style={styles.medicationsList}>
                         {(rx.medications || []).map((med: any, idx: number) => (
                           <View key={idx} style={styles.medicationRow}>
@@ -139,14 +139,14 @@ export default function PrescriptionsScreen() {
                             <View style={{ flex: 1 }}>
                               <Text style={styles.medicationName}>{med.medication}</Text>
                               <View style={styles.medDetailsRow}>
-                                <Text style={styles.medicationDosage}>Dosage: {med.dosage}</Text>
-                                <Text style={styles.medicationQty}>Qty: {med.quantity}</Text>
+                                <Text style={styles.medicationDosage}>{t('dosage')}: {med.dosage}</Text>
+                                <Text style={styles.medicationQty}>{t('quantity')}: {med.quantity}</Text>
                               </View>
                             </View>
                           </View>
                         ))}
                       </View>
-                    )}
+                    )} */}
 
                     {/* Attachment Image (shows for both uploaded files and clinical records with scans) */}
                     {attachment ? (
@@ -164,13 +164,13 @@ export default function PrescriptionsScreen() {
                         <View style={styles.imageOverlay}>
                           <Ionicons name="image-outline" size={20} color="#fff" />
                           <Text style={styles.imageBadge}>
-                            {rx.isUploadedFile ? 'Prescription Image' : 'Clinical Attachment'}
+                            {rx.isUploadedFile ? t('prescriptionImage') : t('clinicalAttachment')}
                           </Text>
                           <TouchableOpacity
                             style={styles.viewFullBtn}
                             onPress={() => handleViewFull(attachment)}
                           >
-                            <Text style={styles.viewFullText}>View Full</Text>
+                            <Text style={styles.viewFullText}>{t('viewFull')}</Text>
                             <Ionicons name="open-outline" size={14} color="#fff" style={{ marginLeft: 4 }} />
                           </TouchableOpacity>
                         </View>
@@ -178,25 +178,25 @@ export default function PrescriptionsScreen() {
                     ) : null}
 
                     {/* Instructions & Duration */}
-                    <View style={styles.footerBlock}>
+                    {/* <View style={styles.footerBlock}>
                       <View style={styles.infoRow}>
                         <Ionicons name="time-outline" size={16} color="#6B7280" />
-                        <Text style={styles.infoTitle}>Duration: </Text>
-                        <Text style={styles.infoText}>{rx.duration || 'N/A'}</Text>
+                        <Text style={styles.infoTitle}>{t('duration')}: </Text>
+                        <Text style={styles.infoText}>{rx.duration || t('na')}</Text>
                       </View>
                       {(rx.instructions || rx.summary) && (
                         <View style={[styles.infoRow, { marginTop: 8, alignItems: 'flex-start' }]}>
                           <Ionicons name="information-circle-outline" size={16} color="#6B7280" style={{ marginTop: 2 }} />
-                          <Text style={styles.infoTitle}>Instructions: </Text>
+                          <Text style={styles.infoTitle}>{t('instructions')}: </Text>
                           <Text style={[styles.infoText, { flex: 1, fontStyle: 'italic' }]}>{rx.instructions || rx.summary}</Text>
                         </View>
                       )}
-                    </View>
+                    </View> */}
 
                     {rx.id && (
                       <View style={styles.idRow}>
                         <Ionicons name="barcode-outline" size={14} color="#9CA3AF" />
-                        <Text style={styles.idText}>{rx.id}</Text>
+                        <Text style={styles.idText}>{t('id')}: {rx.id}</Text>
                       </View>
                     )}
                   </View>
@@ -205,7 +205,7 @@ export default function PrescriptionsScreen() {
             ) : (
               <View style={styles.centerBox}>
                 <Ionicons name="medical-outline" size={48} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No prescriptions found.</Text>
+                <Text style={styles.emptyText}>{t('noPrescriptionsFound')}</Text>
               </View>
             )}
           </View>

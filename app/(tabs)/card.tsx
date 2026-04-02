@@ -94,7 +94,7 @@ export default function CitizenCardScreen() {
   }
 
   const handleLogout = () => {
-    Alert.alert(t('logout'), 'Are you sure you want to logout?', [
+    Alert.alert(t('logout'), t('logoutConfirmation'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('logout'),
@@ -129,7 +129,7 @@ export default function CitizenCardScreen() {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Parth Gautam Citizen Card</Text>
+              <Text style={styles.cardTitle}>{t('parthGautamCitizenCard')}</Text>
               <View style={styles.cardLogo}>
                 <Ionicons name="shield-checkmark" size={32} color="#fff" />
               </View>
@@ -280,9 +280,13 @@ export default function CitizenCardScreen() {
                   />
                 </View>
                 <View style={styles.activityContent}>
-                  <Text style={styles.activityTitle}>{activity.programs?.title || 'Program Participation'}</Text>
+                  <Text style={styles.activityTitle}>{activity.programs?.title || t('programParticipation')}</Text>
                   <Text style={styles.activityDate}>
-                    {new Date(activity.registered_at).toLocaleDateString()} • {activity.status}
+                    {new Date(activity.registered_at).toLocaleDateString()} • {
+                      activity.status === 'Attended' ? t('attended') : 
+                      activity.status === 'Registered' ? t('registered') : 
+                      activity.status
+                    }
                   </Text>
                 </View>
                 <View style={styles.pointsBadge}>
@@ -304,7 +308,7 @@ export default function CitizenCardScreen() {
         {/* ── My OPD Appointments ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My OPD Appointments</Text>
+            <Text style={styles.sectionTitle}>{t('myOpdAppointments')}</Text>
             {loadingOpd && <ActivityIndicator size="small" color="#EF4444" />}
           </View>
 
@@ -323,12 +327,15 @@ export default function CitizenCardScreen() {
                       <Ionicons name="medical" size={20} color="#EF4444" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.opdDoctorName}>{appt.doctor || 'Doctor'}</Text>
-                      <Text style={styles.opdSpecialty}>{appt.specialty || 'General'}</Text>
+                      <Text style={styles.opdDoctorName}>{appt.doctor || t('doctor')}</Text>
+                      <Text style={styles.opdSpecialty}>{appt.specialty || t('general')}</Text>
                     </View>
                     <View style={[styles.opdStatusBadge, { backgroundColor: statusBg }]}>
                       <Text style={[styles.opdStatusText, { color: statusColor }]}>
-                        {appt.status}
+                        {appt.status === 'Cancelled' ? t('cancelled') : 
+                         appt.status === 'Completed' ? t('completed') : 
+                         appt.status === 'Active' ? t('activeStatus') : 
+                         appt.status}
                       </Text>
                     </View>
                   </View>
@@ -354,8 +361,8 @@ export default function CitizenCardScreen() {
           ) : !loadingOpd ? (
             <View style={styles.opdEmptyState}>
               <Ionicons name="calendar-outline" size={40} color="#D1D5DB" />
-              <Text style={styles.opdEmptyText}>No appointments booked yet</Text>
-              <Text style={styles.opdEmptySubtext}>Book an OPD appointment from the Healthcare section</Text>
+              <Text style={styles.opdEmptyText}>{t('noAppointmentsBookedYet')}</Text>
+              <Text style={styles.opdEmptySubtext}>{t('bookOpdFromHealthcare')}</Text>
             </View>
           ) : null}
         </View>
@@ -366,9 +373,9 @@ export default function CitizenCardScreen() {
           {[
             {
               id: 'i1',
-              title: 'Street Light Not Working',
+              title: t('issue1Title'),
               status: 'Pending',
-              comments: 'Our executive will visit your ward by tomorrow morning.',
+              comments: t('issue1Comments'),
               history: [
                 { event: 'reported', date: '2024-03-20', time: '10:00 AM' },
                 { event: 'forwarded', date: '2024-03-21', time: '02:30 PM' },
@@ -376,9 +383,9 @@ export default function CitizenCardScreen() {
             },
             {
               id: 'i2',
-              title: 'Garbage Collection Delayed',
+              title: t('issue2Title'),
               status: 'Resolved',
-              comments: 'The area has been cleared. Thank you for reporting.',
+              comments: t('issue2Comments'),
               history: [
                 { event: 'reported', date: '2024-03-18', time: '09:15 AM' },
                 { event: 'forwarded', date: '2024-03-19', time: '11:45 AM' },
@@ -402,7 +409,9 @@ export default function CitizenCardScreen() {
                     styles.statusText,
                     { color: issue.status === 'Resolved' ? '#166534' : '#92400E' }
                   ]}>
-                    {issue.status}
+                    {issue.status === 'Resolved' ? t('resolved') : 
+                     issue.status === 'Pending' ? t('pending') : 
+                     issue.status}
                   </Text>
                 </View>
               </View>

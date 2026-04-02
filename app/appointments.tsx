@@ -59,7 +59,7 @@ export default function AppointmentsScreen() {
             {loadingAppointments ? (
               <View style={{ padding: 32, alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#EF4444" />
-                <Text style={{ marginTop: 12, color: '#6B7280' }}>Loading appointments...</Text>
+                <Text style={{ marginTop: 12, color: '#6B7280' }}>{t('loadingAppointments')}</Text>
               </View>
             ) : appointmentsData.length > 0 ? (
               appointmentsData.map((appt) => (
@@ -70,7 +70,9 @@ export default function AppointmentsScreen() {
                       <Text style={styles.apptSpecialty}>{appt.specialty}</Text>
                     </View>
                     <View style={[styles.apptStatus, { backgroundColor: appt.status === 'Completed' ? '#D1FAE5' : '#E0F2FE' }]}>
-                      <Text style={[styles.apptStatusText, { color: appt.status === 'Completed' ? '#059669' : '#0284C7' }]}>{appt.status}</Text>
+                      <Text style={[styles.apptStatusText, { color: appt.status === 'Completed' ? '#059669' : '#0284C7' }]}>
+                        {appt.status === 'Completed' ? t('completed') : (appt.status || t('pending'))}
+                      </Text>
                     </View>
                   </View>
 
@@ -90,7 +92,7 @@ export default function AppointmentsScreen() {
                     <View style={styles.prescriptionBlock}>
                       <View style={styles.prescriptionHeader}>
                         <Ionicons name="medical-outline" size={18} color="#10B981" />
-                        <Text style={styles.prescriptionTitle}>Prescription</Text>
+                        <Text style={styles.prescriptionTitle}>{t('prescription')}</Text>
                       </View>
                       <View style={styles.medicationsList}>
                         {(appt.prescriptions.medications || []).map((med: any, idx: number) => (
@@ -98,14 +100,14 @@ export default function AppointmentsScreen() {
                             <Ionicons name="disc" size={8} color="#6B7280" style={{ marginTop: 6, marginRight: 6 }} />
                             <View style={{ flex: 1 }}>
                               <Text style={styles.medicationName}>{med.medication}</Text>
-                              <Text style={styles.medicationDosage}>Dosage: {med.dosage}  |  Qty: {med.quantity}</Text>
+                              <Text style={styles.medicationDosage}>{t('dosage')}: {med.dosage}  |  {t('quantity')}: {med.quantity}</Text>
                             </View>
                           </View>
                         ))}
                       </View>
                       {appt.prescriptions.instructions && (
                         <View style={styles.instructionsBlock}>
-                          <Text style={styles.instructionsTitle}>Instructions:</Text>
+                          <Text style={styles.instructionsTitle}>{t('instructions')}:</Text>
                           <Text style={styles.instructionsText}>{appt.prescriptions.instructions}</Text>
                         </View>
                       )}
@@ -116,7 +118,7 @@ export default function AppointmentsScreen() {
             ) : (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-                <Text style={{ marginTop: 12, color: '#6B7280', fontSize: 16 }}>No appointments found.</Text>
+                <Text style={{ marginTop: 12, color: '#6B7280', fontSize: 16 }}>{t('noAppointmentsFound')}</Text>
               </View>
             )}
           </View>

@@ -218,7 +218,7 @@ const getHospitalBaseUrl = () => {
   return 'https://appointment-management-system-pink.vercel.app';
 };
 
-export const HOSPITAL_BASE_URL = getHospitalBaseUrl();
+export const HOSPITAL_BASE_URL = 'https://appointment-management-system-pink.vercel.app';
 
 const OPD_API_KEY = 'pgf-opd-key-2026';
 

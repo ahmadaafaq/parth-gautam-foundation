@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { programsAPI } from '../utils/api';
 import { useLanguageStore } from '../store/languageStore';
+import * as DocumentPicker from 'expo-document-picker';
 import healthcareBanner from '../assets/images/parth-side.png';
 
 export default function EducationScreen() {
@@ -65,6 +66,7 @@ export default function EducationScreen() {
     annualIncome: '',
     purpose: '',
     contact: '',
+    rationCardImage: null as DocumentPicker.DocumentPickerAsset | null,
   });
 
   // Determine context: scholarship, skills, or general
@@ -88,16 +90,20 @@ export default function EducationScreen() {
   };
 
   const submitAidApplication = () => {
-    if (!aidForm.studentName || !aidForm.contact || !aidForm.institutionName) {
-      Alert.alert(t('error'), t('fillAllFieldsReport'));
+    if (!aidForm.studentName || !aidForm.contact || !aidForm.institutionName || !aidForm.rationCardImage) {
+      if (!aidForm.rationCardImage) {
+        Alert.alert(t('error'), t('rationCardRequired'));
+      } else {
+        Alert.alert(t('error'), t('fillAllFieldsReport'));
+      }
       return;
     }
 
     Alert.alert(
       t('success'),
       t('educationAidSuccessMsg'),
-      [{ 
-        text: t('ok'), 
+      [{
+        text: t('ok'),
         onPress: () => {
           setIsAidModalVisible(false);
           setAidForm({
@@ -108,10 +114,26 @@ export default function EducationScreen() {
             annualIncome: '',
             purpose: '',
             contact: '',
+            rationCardImage: null,
           });
-        } 
+        }
       }]
     );
+  };
+
+  const handlePickRationCard = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        multiple: false,
+      });
+
+      if (!result.canceled) {
+        setAidForm({ ...aidForm, rationCardImage: result.assets[0] });
+      }
+    } catch (err) {
+      console.error('Pick error:', err);
+    }
   };
 
   const services = [
@@ -202,9 +224,9 @@ export default function EducationScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          
+
           {/* Education Aid Call to Action */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.aidButton}
             onPress={handleApplyAid}
             activeOpacity={0.8}
@@ -397,10 +419,36 @@ export default function EducationScreen() {
                 numberOfLines={3}
               />
 
-              <TouchableOpacity style={[styles.applyButton, { marginTop: 12, paddingVertical: 14 }]} onPress={submitAidApplication}>
+              <Text style={styles.inputLabel}>{t('rationCard')} *</Text>
+              <View style={styles.uploadSection}>
+                {aidForm.rationCardImage && (
+                  <View style={styles.fileRow}>
+                    <View style={styles.fileInfo}>
+                      <Ionicons
+                        name={aidForm.rationCardImage.mimeType?.includes('pdf') ? 'document-text' : 'image'}
+                        size={20}
+                        color="#6B7280"
+                      />
+                      <Text style={styles.fileName} numberOfLines={1}>
+                        {aidForm.rationCardImage.name}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setAidForm({ ...aidForm, rationCardImage: null })}>
+                      <Ionicons name="close-circle" size={20} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <TouchableOpacity style={styles.addDocBtn} onPress={handlePickRationCard}>
+                  <Ionicons name="cloud-upload-outline" size={24} color="#F59E0B" />
+                  <Text style={styles.addDocBtnText}>{t('uploadRationCard')}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={[styles.applyButton, { marginTop: 24, paddingVertical: 14 }]} onPress={submitAidApplication}>
                 <Text style={styles.applyButtonText}>{t('applyNow')}</Text>
               </TouchableOpacity>
-              
+
               <View style={{ height: 40 }} />
             </ScrollView>
           </View>
@@ -724,5 +772,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  uploadSection: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  fileName: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+  addDocBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  addDocBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#F59E0B',
   },
 });

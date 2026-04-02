@@ -29,36 +29,43 @@ export default function HealthSummaryScreen() {
     try {
       const result = await Share.share({
         message:
-          'Health Summary Report\n\nHealth Score: 78/100\nStatus: Good - Maintain current health habits',
-        title: 'My Health Summary',
+          `${t('healthSummaryReport')}\n\n${t('healthScoreLabel')}: 78/100\n${t('status')}: ${t('healthStatusGood')}`,
+        title: t('healthSummaryReport'),
       });
       if (result.action === Share.sharedAction) {
         console.log('Shared successfully');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to share report');
+      Alert.alert(t('error'), t('failedToShare'));
     }
   };
 
   const keyFindings = [
-    { label: 'Blood Pressure', value: '120/80 mmHg - Normal range' },
-    { label: 'Cholesterol Level', value: '180 mg/dL - Slightly elevated' },
-    { label: 'Blood Sugar', value: '95 mg/dL - Normal fasting level' },
+    { label: t('bloodPressure'), value: t('bpNormal') },
+    { label: t('cholesterolLevel'), value: t('cholesterolElevated') },
+    { label: t('bloodSugar'), value: t('sugarNormal') },
   ];
 
   const deficiencies = [
-    { label: 'Vitamin D', value: 'Below optimal levels - Increase sunlight exposure' },
-    { label: 'Iron Level', value: 'Borderline low - Include iron-rich foods in diet' },
+    { label: t('vitaminD'), value: t('vitDLow') },
+    { label: t('ironLevel'), value: t('ironLow') },
   ];
 
   const lifestyle = [
-    'Increase intake of green vegetables and whole grains',
-    'Exercise 30 minutes daily for cardiovascular health',
-    'Reduce sodium intake to maintain blood pressure',
-    'Get 7-8 hours of quality sleep every night',
+    t('lifestyleTip1'),
+    t('lifestyleTip2'),
+    t('lifestyleTip3'),
+    t('lifestyleTip4'),
   ];
 
-  const tests = ['CBC', 'Lipid Panel', 'Thyroid', 'HbA1c', 'Vitamins', 'Kidney Panel'];
+  const tests = [
+    t('testCBC'),
+    t('testLipid'),
+    t('testThyroid'),
+    t('testHbA1c'),
+    t('testVitamins'),
+    t('testKidney')
+  ];
 
   const summaryCards = [
     {
@@ -157,7 +164,7 @@ export default function HealthSummaryScreen() {
           >
             <Text style={styles.scoreLabel}>{t('overallHealthScore')}</Text>
             <Text style={styles.scoreValue}>78/100</Text>
-            <Text style={styles.scoreStatus}>Good — Maintain current health habits</Text>
+            <Text style={styles.scoreStatus}>{t('healthStatusGood')}</Text>
           </LinearGradient>
 
           {/* Key Findings */}
@@ -231,7 +238,7 @@ export default function HealthSummaryScreen() {
 
             <TouchableOpacity
               style={styles.secondaryButton}
-              onPress={() => Alert.alert('Download', 'PDF download coming soon!')}
+              onPress={() => Alert.alert(t('downloadReport'), t('pdfDownloadSoon'))}
             >
               <Ionicons name="download-outline" size={18} color="#EF4444" />
               <Text style={styles.secondaryButtonText}>{t('downloadReport')}</Text>
