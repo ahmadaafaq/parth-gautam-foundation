@@ -12,6 +12,7 @@ import {
   Animated,
   Dimensions,
   Pressable,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
@@ -164,6 +165,7 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [verificationPending, setVerificationPending] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [otpArray, setOtpArray] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
@@ -632,16 +634,63 @@ export default function OnboardingScreen() {
               </View>
 
               {/* Consent Checkbox */}
-              <TouchableOpacity
-                style={styles.consentRow}
-                onPress={() => setFormData(prev => ({ ...prev, consent: !prev.consent }))}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.checkbox, formData.consent && styles.checkboxActive]}>
+              <View style={styles.consentRowContainer}>
+                <TouchableOpacity
+                  style={[styles.checkbox, formData.consent && styles.checkboxActive]}
+                  onPress={() => setFormData(prev => ({ ...prev, consent: !prev.consent }))}
+                  activeOpacity={0.8}
+                >
                   {formData.consent && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                </TouchableOpacity>
+                <Text style={styles.consentText}>
+                  {t('iAgreeTo')} {' '}
+                  <Text
+                    style={styles.termsLink}
+                    onPress={() => setShowTermsModal(true)}
+                  >
+                    {t('termsAndConditions')}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Terms and Conditions Modal */}
+              <Modal
+                visible={showTermsModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowTermsModal(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>{t('termsAndConditions')}</Text>
+                      <TouchableOpacity onPress={() => setShowTermsModal(false)}>
+                        <Ionicons name="close" size={24} color="#64748B" />
+                      </TouchableOpacity>
+                    </View>
+                    <ScrollView style={styles.modalBody}>
+                      <Text style={styles.termsText}>{t('termsContent')}</Text>
+                    </ScrollView>
+                    {/* <View style={styles.modalFooter}>
+                      <TouchableOpacity
+                        style={styles.modalCloseBtn}
+                        onPress={() => setShowTermsModal(false)}
+                      >
+                        <Text style={styles.modalCloseBtnText}>{t('close')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.modalAcceptBtn}
+                        onPress={() => {
+                          setFormData(prev => ({ ...prev, consent: true }));
+                          setShowTermsModal(false);
+                        }}
+                      >
+                        <Text style={styles.modalAcceptBtnText}>{t('accept')}</Text>
+                      </TouchableOpacity>
+                    </View> */}
+                  </View>
                 </View>
-                <Text style={styles.consentText}>{t('consentText')}</Text>
-              </TouchableOpacity>
+              </Modal>
             </View>
           )}
 
@@ -882,7 +931,7 @@ const styles = StyleSheet.create({
     borderColor: '#2563EB',
     backgroundColor: '#EFF6FF',
   },
-  consentRow: {
+  consentRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 16,
@@ -905,5 +954,88 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#475569',
     fontWeight: '500',
+  },
+  termsLink: {
+    color: '#2563EB',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 15, 41, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    height: '80%',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1E293B',
+    letterSpacing: -0.3,
+  },
+  modalBody: {
+    padding: 24,
+  },
+  termsText: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  modalFooter: {
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+    flexDirection: 'row',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  modalCloseBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  modalAcceptBtn: {
+    flex: 2,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalAcceptBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
