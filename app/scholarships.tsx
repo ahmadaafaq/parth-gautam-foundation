@@ -23,7 +23,7 @@ const SCHOLARSHIPS = [
     category: 'Merit-based',
     amount: '₹12,000 / year',
     lastDate: '31 May 2025',
-    website: 'https://scholarships.gov.in',
+    website: 'https://www.myscheme.gov.in/schemes/pmss',
     eligibility: 'Students scoring 60%+ in class 12 and enrolled in UG courses.',
     description:
       'The PM National Scholarship Scheme provides financial assistance to meritorious students from economically weaker sections to pursue higher education in India.',
@@ -43,7 +43,7 @@ const SCHOLARSHIPS = [
     category: 'State – Class 9 & 10',
     amount: '₹3,000 – ₹6,000',
     lastDate: '15 Jun 2025',
-    website: 'https://scholarship.up.gov.in',
+    website: 'https://www.myscheme.gov.in/schemes/pmcup',
     eligibility: 'Students of Class 9–10 from OBC/SC/ST/Minority communities in UP.',
     description:
       'The UP Pre-Matric Scholarship is designed to reduce dropout rates among minority and backward-class students studying in classes 9 and 10.',
