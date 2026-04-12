@@ -600,6 +600,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 12,
   },
+  // ── ) ──
   programIconContainer: {
     width: 48,
     height: 48,
