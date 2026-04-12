@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Parth Gautam Foundation",
-    "slug": "pg-foundation",
+    "slug": "parth-gautam-foundation",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/PG-App-Logo.png",
@@ -63,9 +63,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a87261fc-0bf3-4b79-8eec-9a5b376f610a"
+        "projectId": "5eb78bf9-0f25-4913-ab8a-fd3928560855"
       }
     },
-    "owner": "nawazshah"
+    "owner": "shahahmad12s-organization"
   }
 }
