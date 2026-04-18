@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Apna Foundation",
-    "slug": "pg-foundation",
+    "name": "Parth Gautam Foundation",
+    "slug": "parth-gautam-foundation",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/PG-App-Logo.webp",
@@ -63,9 +63,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a4fe81e8-f6f4-4060-a7fb-17f79c7bef5d"
+        "projectId": "5eb78bf9-0f25-4913-ab8a-fd3928560855"
       }
     },
-    "owner": "theanasiqbal"
+    "owner": "shahahmad12s-organization"
   }
 }

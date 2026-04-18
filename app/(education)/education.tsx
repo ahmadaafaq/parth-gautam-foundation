@@ -169,7 +169,7 @@ export default function EducationScreen() {
       description: t('professionalCareerCounseling'),
       icon: 'briefcase',
       color: '#8B5CF6',
-      url: 'https://v0-ai-career-guidance-platform-ten.vercel.app/',
+      url: 'https://ai-counselor-git-main-shnawaz844s-projects.vercel.app',
     },
     {
       id: 'ai-tutor',
@@ -626,6 +626,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 12,
   },
+  // ── ) ──
   programIconContainer: {
     width: 48,
     height: 48,
