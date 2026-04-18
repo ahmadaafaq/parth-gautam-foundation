@@ -27,7 +27,12 @@ function RootLayoutNav() {
 
     const handleNavigation = () => {
       const isRoot = !segments[0];
-      const isAuthGateway = ['login', 'otp', 'onboarding'].includes(segments[0] as any);
+
+      // Auth screens can live at the root OR inside the (auth) route group
+      const authScreens = ['login', 'otp', 'onboarding'];
+      const isAuthGateway =
+        authScreens.includes(segments[0] as any) ||          // bare route
+        (segments[0] === '(auth)' && authScreens.includes(segments[1] as any)); // inside group
 
       if (isSignedIn && isAuthenticated) {
         if (isRoot || isAuthGateway) {
@@ -38,7 +43,7 @@ function RootLayoutNav() {
           logout();
         }
         if (!isRoot && !isAuthGateway) {
-          router.replace('/' as any);
+          router.replace('/login' as any);
         }
       }
     };
@@ -51,20 +56,13 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="healthcare" />
-      <Stack.Screen name="education" />
-      <Stack.Screen name="health-summary" />
-      <Stack.Screen name="book-appointment" />
-      <Stack.Screen name="teleconsultation" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(healthcare)" />
+      <Stack.Screen name="(education)" />
+      <Stack.Screen name="(jobs)" />
+      <Stack.Screen name="(civic)" />
       <Stack.Screen name="notifications" />
-      <Stack.Screen name="survey" />
-      <Stack.Screen name="survey/[id]" />
-      <Stack.Screen name="weekly-call" />
-      <Stack.Screen name="voter/index" />
-      <Stack.Screen name="jobs" />
-      <Stack.Screen name="report-issue" />
     </Stack>
   );
 }

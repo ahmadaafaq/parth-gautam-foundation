@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Parth Gautam Foundation",
+    "name": "Apna Foundation",
     "slug": "pg-foundation",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/PG-App-Logo.png",
+    "icon": "./assets/images/PG-App-Logo.webp",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/PG-App-Logo.png",
+        "foregroundImage": "./assets/images/PG-App-Logo.webp",
         "backgroundColor": "#3B82F6"
       },
       "permissions": [
@@ -36,7 +36,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/PG-App-Logo.png"
+      "favicon": "./assets/images/PG-App-Logo.webp"
     },
     "plugins": [
       "expo-router",
@@ -49,7 +49,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/PG-App-Logo.png",
+          "image": "./assets/images/PG-App-Logo.webp",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#F7983E"

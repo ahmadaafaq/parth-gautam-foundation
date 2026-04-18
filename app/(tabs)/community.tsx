@@ -98,7 +98,7 @@ export default function CommunityTabScreen() {
       id: 3,
       title: 'Youth Career Fair',
       date: 'Nov 12, 2024 9:00 AM',
-      location: 'Parth Gautam Foundation Center',
+      location: 'Apna Foundation Center',
       description: 'Connecting youth with local businesses, startups, and training institutes for employment opportunities.',
     }
   ];
@@ -183,8 +183,8 @@ export default function CommunityTabScreen() {
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventHeader}>
                   <Text style={styles.eventTitle}>{event.title}</Text>
-                  <TouchableOpacity 
-                    style={[styles.rsvpButton, rsvpEvents.includes(event.id) && styles.rsvpButtonDisabled]} 
+                  <TouchableOpacity
+                    style={[styles.rsvpButton, rsvpEvents.includes(event.id) && styles.rsvpButtonDisabled]}
                     onPress={() => handleRSVP(event.id)}
                     disabled={rsvpEvents.includes(event.id)}
                   >

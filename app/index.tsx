@@ -41,7 +41,7 @@ export default function WelcomeScreen() {
           <View style={styles.logoOuter}>
             <View style={styles.logoInner}>
               <Image
-                source={require('../assets/images/pg-logo.png')}
+                source={require('../assets/images/ap-logo.jpeg')}
                 style={styles.logo}
                 resizeMode="contain"
               />

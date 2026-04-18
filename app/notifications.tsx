@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -57,10 +57,22 @@ export default function NotificationsScreen() {
   const { t } = useLanguageStore();
   const [refreshing, setRefreshing] = useState(false);
   const notifications = MOCK_NOTIFICATIONS(t);
+  const mountedRef = useRef(true);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    timeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) setRefreshing(false);
+    }, 1000);
   };
 
   return (

@@ -97,6 +97,16 @@ export default function AIAssistantScreen() {
   const sessionId = useRef(`session-${Date.now()}`);
   const inputRef = useRef<TextInput>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const mountedRef = useRef(true);
+  const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -153,11 +163,13 @@ export default function AIAssistantScreen() {
     Speech.speak('Listening. What would you like to know?', {
       language: 'en',
       onDone: () => {
-        setTimeout(() => {
-          setIsListening(false);
-          Alert.alert('Voice Input', 'For this demo, please type your question in the chat tab.', [
-            { text: 'Go to Chat', onPress: () => setActiveTab('chat') },
-          ]);
+        voiceTimerRef.current = setTimeout(() => {
+          if (mountedRef.current) {
+            setIsListening(false);
+            Alert.alert('Voice Input', 'For this demo, please type your question in the chat tab.', [
+              { text: 'Go to Chat', onPress: () => setActiveTab('chat') },
+            ]);
+          }
         }, 1800);
       },
     });

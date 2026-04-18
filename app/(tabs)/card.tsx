@@ -24,7 +24,7 @@ import { useAuth } from '@clerk/clerk-expo';
 export default function CitizenCardScreen() {
   const { user, logout, setUser } = useAuthStore();
   const { signOut } = useAuth();
-  const { t } = useLanguageStore();
+  const { t, language } = useLanguageStore();
   const router = useRouter();
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +84,57 @@ export default function CitizenCardScreen() {
       setLoadingOpd(false);
     }
   };
+
+  const benefitsData = React.useMemo(() => [
+    {
+      icon: 'medical',
+      title: t('priorityHealthRegistration'),
+      description: t('skipQueues'),
+      color: '#EF4444',
+    },
+    {
+      icon: 'school',
+      title: t('scholarshipEligibility'),
+      description: t('accessEducation'),
+      color: '#F59E0B',
+    },
+    {
+      icon: 'book',
+      title: t('skillCourseAccess'),
+      description: t('freeTraining'),
+      color: '#10B981',
+    },
+    {
+      icon: 'ribbon',
+      title: t('volunteerRecognition'),
+      description: t('earnPointsRewards'),
+      color: '#8B5CF6',
+    },
+  ], [t, language]);
+
+  const issuesData = React.useMemo(() => [
+    {
+      id: 'i1',
+      title: t('issue1Title'),
+      status: 'Pending',
+      comments: t('issue1Comments'),
+      history: [
+        { event: 'reported', date: '2024-03-20', time: '10:00 AM' },
+        { event: 'forwarded', date: '2024-03-21', time: '02:30 PM' },
+      ]
+    },
+    {
+      id: 'i2',
+      title: t('issue2Title'),
+      status: 'Resolved',
+      comments: t('issue2Comments'),
+      history: [
+        { event: 'reported', date: '2024-03-18', time: '09:15 AM' },
+        { event: 'forwarded', date: '2024-03-19', time: '11:45 AM' },
+        { event: 'resolved', date: '2024-03-22', time: '04:20 PM' },
+      ]
+    },
+  ], [t, language]);
 
   if (!user) {
     return (
@@ -156,32 +207,7 @@ export default function CitizenCardScreen() {
         {/* Benefits */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('yourBenefits')}</Text>
-          {[
-            {
-              icon: 'medical',
-              title: t('priorityHealthRegistration'),
-              description: t('skipQueues'),
-              color: '#EF4444',
-            },
-            {
-              icon: 'school',
-              title: t('scholarshipEligibility'),
-              description: t('accessEducation'),
-              color: '#F59E0B',
-            },
-            {
-              icon: 'book',
-              title: t('skillCourseAccess'),
-              description: t('freeTraining'),
-              color: '#10B981',
-            },
-            {
-              icon: 'ribbon',
-              title: t('volunteerRecognition'),
-              description: t('earnPointsRewards'),
-              color: '#8B5CF6',
-            },
-          ].map((benefit, index) => (
+          {benefitsData.map((benefit, index) => (
             <View key={index} style={styles.benefitCard}>
               <View style={[styles.benefitIcon, { backgroundColor: benefit.color + '20' }]}>
                 <Ionicons name={benefit.icon as any} size={24} color={benefit.color} />
@@ -234,7 +260,7 @@ export default function CitizenCardScreen() {
 
         {/* Survey Section */}
         <View style={styles.section}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.surveyActionButton}
             onPress={() => router.push('/survey' as any)}
           >
@@ -283,9 +309,9 @@ export default function CitizenCardScreen() {
                   <Text style={styles.activityTitle}>{activity.programs?.title || t('programParticipation')}</Text>
                   <Text style={styles.activityDate}>
                     {new Date(activity.registered_at).toLocaleDateString()} • {
-                      activity.status === 'Attended' ? t('attended') : 
-                      activity.status === 'Registered' ? t('registered') : 
-                      activity.status
+                      activity.status === 'Attended' ? t('attended') :
+                        activity.status === 'Registered' ? t('registered') :
+                          activity.status
                     }
                   </Text>
                 </View>
@@ -316,10 +342,10 @@ export default function CitizenCardScreen() {
             opdAppointments.map((appt) => {
               const statusColor = appt.status === 'Cancelled' ? '#EF4444'
                 : appt.status === 'Completed' ? '#10B981'
-                : '#3B82F6';
+                  : '#3B82F6';
               const statusBg = appt.status === 'Cancelled' ? '#FEF2F2'
                 : appt.status === 'Completed' ? '#F0FDF4'
-                : '#EFF6FF';
+                  : '#EFF6FF';
               return (
                 <View key={appt.id} style={styles.opdCard}>
                   <View style={styles.opdCardHeader}>
@@ -332,10 +358,10 @@ export default function CitizenCardScreen() {
                     </View>
                     <View style={[styles.opdStatusBadge, { backgroundColor: statusBg }]}>
                       <Text style={[styles.opdStatusText, { color: statusColor }]}>
-                        {appt.status === 'Cancelled' ? t('cancelled') : 
-                         appt.status === 'Completed' ? t('completed') : 
-                         appt.status === 'Active' ? t('activeStatus') : 
-                         appt.status}
+                        {appt.status === 'Cancelled' ? t('cancelled') :
+                          appt.status === 'Completed' ? t('completed') :
+                            appt.status === 'Active' ? t('activeStatus') :
+                              appt.status}
                       </Text>
                     </View>
                   </View>
@@ -370,31 +396,9 @@ export default function CitizenCardScreen() {
         {/* My Issues Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('myIssues')}</Text>
-          {[
-            {
-              id: 'i1',
-              title: t('issue1Title'),
-              status: 'Pending',
-              comments: t('issue1Comments'),
-              history: [
-                { event: 'reported', date: '2024-03-20', time: '10:00 AM' },
-                { event: 'forwarded', date: '2024-03-21', time: '02:30 PM' },
-              ]
-            },
-            {
-              id: 'i2',
-              title: t('issue2Title'),
-              status: 'Resolved',
-              comments: t('issue2Comments'),
-              history: [
-                { event: 'reported', date: '2024-03-18', time: '09:15 AM' },
-                { event: 'forwarded', date: '2024-03-19', time: '11:45 AM' },
-                { event: 'resolved', date: '2024-03-22', time: '04:20 PM' },
-              ]
-            },
-          ].map((issue) => (
-            <TouchableOpacity 
-              key={issue.id} 
+          {issuesData.map((issue) => (
+            <TouchableOpacity
+              key={issue.id}
               style={styles.issueCard}
               onPress={() => setSelectedIssue(issue)}
               activeOpacity={0.7}
@@ -409,9 +413,9 @@ export default function CitizenCardScreen() {
                     styles.statusText,
                     { color: issue.status === 'Resolved' ? '#166534' : '#92400E' }
                   ]}>
-                    {issue.status === 'Resolved' ? t('resolved') : 
-                     issue.status === 'Pending' ? t('pending') : 
-                     issue.status}
+                    {issue.status === 'Resolved' ? t('resolved') :
+                      issue.status === 'Pending' ? t('pending') :
+                        issue.status}
                   </Text>
                 </View>
               </View>
@@ -439,7 +443,7 @@ export default function CitizenCardScreen() {
 
             <ScrollView contentContainerStyle={styles.modalContent}>
               <Text style={styles.modalIssueTitle}>{selectedIssue?.title}</Text>
-              
+
               <View style={styles.timeline}>
                 {selectedIssue?.history.map((h: any, idx: number) => (
                   <View key={idx} style={styles.timelineItem}>

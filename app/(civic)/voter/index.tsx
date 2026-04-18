@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLanguageStore } from '../../store/languageStore';
-import { IMAGE_LINKS, hasImage } from '../../utils/constants';
+import { useLanguageStore } from '../../../store/languageStore';
+import { IMAGE_LINKS, hasImage } from '../../../utils/constants';
 
 export default function VoterDashboard() {
   const router = useRouter();

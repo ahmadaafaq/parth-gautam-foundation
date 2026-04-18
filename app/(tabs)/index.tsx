@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { suggestionsAPI, programsAPI } from '../../utils/api';
-import bannerImage from '../../assets/images/parth-gautam-umesh-gautam.png';
+import { IMAGE_LINKS, hasImage } from '../../utils/constants';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { t } = useLanguageStore();
+  const { t, language } = useLanguageStore();
   const mockSuggestions = [
     { id: 's1', title: 'Free Medical Checkup', location: 'Ward 1 Health Center', date: 'Tomorrow, 10 AM', category: 'healthcare' },
     { id: 's2', title: 'IT Skills Training', location: 'Community Center', date: 'Next Monday', category: 'education' },
@@ -39,6 +39,9 @@ export default function HomeScreen() {
   const [updates, setUpdates] = useState<any[]>(mockUpdates);
   const [refreshing, setRefreshing] = useState(false);
 
+  const mountedRef = useRef(true);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return t('goodMorning');
@@ -47,15 +50,21 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    // Mock data does not need loading logic or interval
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
   }, [user]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    refreshTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setRefreshing(false);
+    }, 1000);
   };
 
-  const quickActions = [
+  const quickActions = React.useMemo(() => [
     {
       id: 'doctor',
       title: t('bookDoctor'),
@@ -98,7 +107,7 @@ export default function HomeScreen() {
       color: '#10B981',
       onPress: () => router.push('/weekly-call' as any),
     },
-  ];
+  ], [t, language, router]);
 
   if (!user) return <View style={styles.container} />;
 
@@ -131,14 +140,16 @@ export default function HomeScreen() {
             </View>
           </View>
         </LinearGradient>
-        <Image
-          source={bannerImage}
-          style={styles.mainBanner}
-          resizeMode="cover"
-        />
+        {hasImage('BANNER_IMAGE') && (
+          <Image
+            source={{ uri: IMAGE_LINKS.BANNER_IMAGE }}
+            style={styles.mainBanner}
+            resizeMode="cover"
+          />
+        )}
 
         {/* Citizen Card Mini Widget */}
-        <View style={styles.cardWidget}>
+        <View style={[styles.cardWidget, { marginTop: hasImage('BANNER_IMAGE') ? -20 : 10 }]}>
           <View style={styles.cardWidgetContent}>
             <View>
               <Text style={styles.cardWidgetLabel}>{t('citizenId')}</Text>
